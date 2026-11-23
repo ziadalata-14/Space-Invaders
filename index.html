@@ -1,0 +1,3128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>NEON SWARM VR: Smooth HD Edition</title>
+
+  <!-- Crisp Futuristic Sans-Serif Fonts (with clean system fallbacks) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =========================================================================
+       SMOOTH HD GLASSMORPHIC CYBER-ARCADE UI
+       ========================================================================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #030514;
+      font-family: 'Rajdhani', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #eaf8ff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top Minimal Controls Bar */
+    #top-bar {
+      position: fixed;
+      top: 16px;
+      right: 18px;
+      z-index: 25;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .hud-btn {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      background: rgba(6, 16, 42, 0.72);
+      border: 1px solid rgba(0, 240, 255, 0.48);
+      color: #ccf9ff;
+      padding: 8px 15px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 220, 255, 0.2), inset 0 0 12px rgba(0, 240, 255, 0.08);
+      transition: transform 0.16s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .hud-btn:hover {
+      background: rgba(0, 235, 255, 0.2);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .hud-btn:active {
+      transform: scale(0.95);
+    }
+
+    .hud-btn.vr-pill {
+      border-color: rgba(255, 56, 220, 0.65);
+      color: #ffd0f8;
+      box-shadow: 0 4px 20px rgba(255, 43, 214, 0.28);
+    }
+
+    /* Smooth Red Shield-Hit Vignette */
+    #damage-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 18;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(circle at center, transparent 46%, rgba(255, 36, 84, 0.65) 100%);
+      transition: opacity 0.22s ease-out;
+    }
+
+    /* Smooth Floating Announcement Banner (Desktop) */
+    #combo-popup {
+      position: fixed;
+      top: 14%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      z-index: 22;
+      pointer-events: none;
+      opacity: 0;
+      text-align: center;
+      padding: 12px 32px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(6, 16, 44, 0.82), rgba(20, 8, 44, 0.78));
+      border: 1px solid rgba(0, 245, 255, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 34px rgba(0, 240, 255, 0.32);
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #combo-popup.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #combo-title {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: clamp(1.2rem, 3vw, 1.85rem);
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      color: #ffffff;
+      text-shadow: 0 0 18px rgba(0, 245, 255, 0.75);
+    }
+
+    #combo-sub {
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      color: #a4f4ff;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    /* Mobile Touch Strafe Buttons */
+    #touch-controls {
+      position: fixed;
+      bottom: 22px;
+      left: 0;
+      right: 0;
+      z-index: 22;
+      display: none;
+      justify-content: space-between;
+      padding: 0 20px;
+      pointer-events: none;
+    }
+
+    .touch-btn {
+      pointer-events: auto;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(0, 245, 255, 0.65);
+      background: rgba(6, 18, 44, 0.68);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #c2fbff;
+      font-size: 22px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 22px rgba(0, 245, 255, 0.3);
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+
+    .touch-btn:active {
+      background: rgba(0, 245, 255, 0.35);
+      transform: scale(0.92);
+    }
+
+    /* Glassmorphic Start / Pause / Game Over Overlays */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at center, rgba(10, 16, 52, 0.58) 0%, rgba(2, 4, 16, 0.88) 100%);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .panel {
+      width: 100%;
+      max-width: 640px;
+      background: linear-gradient(155deg, rgba(8, 18, 48, 0.9), rgba(22, 8, 48, 0.92));
+      border: 1px solid rgba(0, 245, 255, 0.45);
+      border-radius: 26px;
+      padding: 30px 28px;
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.65),
+        0 0 48px rgba(0, 240, 255, 0.18),
+        inset 0 0 34px rgba(145, 45, 255, 0.14);
+      text-align: center;
+    }
+
+    .badge-hd {
+      display: inline-block;
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      color: #8bf7ff;
+      background: rgba(0, 245, 255, 0.12);
+      border: 1px solid rgba(0, 245, 255, 0.4);
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .title-glow {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: clamp(1.6rem, 4.2vw, 2.5rem);
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(95deg, #00f5ff 0%, #ffffff 38%, #ff4be2 72%, #ffae33 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(0, 245, 255, 0.4));
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: #95d3f2;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .control-card {
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(0, 240, 255, 0.24);
+      border-radius: 16px;
+      padding: 13px 15px;
+    }
+
+    .control-card.vr {
+      border-color: rgba(255, 56, 220, 0.28);
+    }
+
+    .control-card h3 {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #00f5ff;
+      margin-bottom: 6px;
+    }
+
+    .control-card.vr h3 {
+      color: #ff5ce8;
+    }
+
+    .control-card p {
+      font-size: 0.92rem;
+      line-height: 1.4;
+      color: #d0eaf8;
+      font-weight: 500;
+    }
+
+    .powerup-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .pill {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 0.67rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      letter-spacing: 0.08em;
+      border: 1px solid currentColor;
+      background: rgba(4, 10, 28, 0.55);
+    }
+
+    .pill.rapid  { color: #00f5ff; }
+    .pill.dual   { color: #ff4be2; }
+    .pill.repair { color: #2dff88; }
+    .pill.life   { color: #ffd23f; }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary, .btn-vr {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      flex: 1 1 195px;
+      padding: 14px 22px;
+      border-radius: 16px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn-primary {
+      border: 1.5px solid #00f5ff;
+      background: linear-gradient(135deg, rgba(0, 215, 255, 0.32), rgba(0, 105, 255, 0.44));
+      box-shadow: 0 6px 26px rgba(0, 245, 255, 0.32);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.5), rgba(0, 130, 255, 0.58));
+      box-shadow: 0 8px 36px rgba(0, 245, 255, 0.58);
+    }
+
+    .btn-vr {
+      border: 1.5px solid #ff38dc;
+      background: linear-gradient(135deg, rgba(255, 43, 214, 0.32), rgba(135, 20, 255, 0.46));
+      box-shadow: 0 6px 26px rgba(255, 43, 214, 0.32);
+    }
+
+    .btn-vr:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 36px rgba(255, 43, 214, 0.62);
+    }
+
+    .btn-vr:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .vr-status {
+      font-size: 0.85rem;
+      color: #8eaec9;
+      min-height: 20px;
+      font-weight: 600;
+    }
+
+    .final-stats {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin: 18px 0 24px;
+    }
+
+    .stat-box {
+      background: rgba(0, 245, 255, 0.08);
+      border: 1px solid rgba(0, 245, 255, 0.32);
+      border-radius: 16px;
+      padding: 13px 20px;
+      min-width: 130px;
+    }
+
+    .stat-label {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      color: #8cc9e8;
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-family: 'Orbitron', system-ui, sans-serif;
+      font-size: 1.55rem;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 14px rgba(0, 245, 255, 0.65);
+      margin-top: 4px;
+    }
+  </style>
+
+  <!-- ES Module Import Map for Three.js r160 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="damage-flash"></div>
+
+  <!-- Minimal Top-Right Controls -->
+  <div id="top-bar">
+    <button id="btn-mute" class="hud-btn">SOUND ON</button>
+    <button id="btn-pause" class="hud-btn" style="display:none;">PAUSE</button>
+    <button id="btn-vr-top" class="hud-btn vr-pill" style="display:none;">ENTER VR</button>
+    <button id="btn-menu" class="hud-btn" style="display:none;">MENU</button>
+  </div>
+
+  <!-- Smooth Floating Wave / Combo Popup -->
+  <div id="combo-popup">
+    <div id="combo-title">WAVE 01</div>
+    <div id="combo-sub">INCOMING 3D SWARM</div>
+  </div>
+
+  <!-- Mobile Strafe Controls -->
+  <div id="touch-controls">
+    <button id="touch-left" class="touch-btn" aria-label="Strafe Left">◀</button>
+    <button id="touch-right" class="touch-btn" aria-label="Strafe Right">▶</button>
+  </div>
+
+  <!-- Start Menu Overlay -->
+  <div id="start-overlay" class="overlay">
+    <div class="panel">
+      <div class="badge-hd">SMOOTH HD EDITION • 3D WEBXR</div>
+      <div class="title-glow">NEON SWARM VR</div>
+      <div class="subtitle">3D Space Invaders &amp; Galaga</div>
+
+      <div class="controls-grid">
+        <div class="control-card">
+          <h3>Desktop / Mobile</h3>
+          <p>Smooth mouse or touch aiming. <strong>Click / Space</strong> fires alternating Cyan &amp; Magenta blasters. Hold <strong>Shift / Right-Click</strong> for Dual Plasma Beam. <strong>A / D</strong> or <strong>◀ / ▶</strong> strafe behind green hex shields. <strong>P / Esc</strong> pauses.</p>
+        </div>
+        <div class="control-card vr">
+          <h3>Meta Quest / WebXR VR</h3>
+          <p>Full 6DOF dual-wielded Cyan &amp; Magenta sculpted blasters with laser sights. Hold either <strong>Trigger</strong> to fire with tactile haptic feedback, and physically lean or sidestep to dodge plasma!</p>
+        </div>
+      </div>
+
+      <div class="powerup-legend">
+        <span class="pill rapid">⚡ RAPID FIRE</span>
+        <span class="pill dual">✦ DUAL BEAM</span>
+        <span class="pill repair">⬡ SHIELD REPAIR</span>
+        <span class="pill life">♥ EXTRA LIFE</span>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-play-desktop" class="btn-primary">PLAY DESKTOP</button>
+        <button id="btn-enter-vr" class="btn-vr" disabled>ENTER VR</button>
+      </div>
+      <div id="vr-status" class="vr-status">Checking WebXR headset support...</div>
+    </div>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div id="pause-overlay" class="overlay hidden">
+    <div class="panel" style="max-width: 440px;">
+      <div class="title-glow">PAUSED</div>
+      <div class="subtitle">Defense Grid On Standby</div>
+      <div class="btn-row">
+        <button id="btn-resume" class="btn-primary">RESUME</button>
+        <button id="btn-pause-restart" class="btn-vr">RESTART</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="end-overlay" class="overlay hidden">
+    <div class="panel">
+      <div id="end-title" class="title-glow">GAME OVER</div>
+      <div id="end-subtitle" class="subtitle">Defense Grid Breached</div>
+
+      <div class="final-stats">
+        <div class="stat-box">
+          <div class="stat-label">Final Score</div>
+          <div id="final-score" class="stat-val">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Wave Reached</div>
+          <div id="final-wave" class="stat-val">01</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Max Combo</div>
+          <div id="final-combo" class="stat-val">x1</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-restart" class="btn-primary">PLAY AGAIN</button>
+        <button id="btn-end-vr" class="btn-vr" style="display:none;">ENTER VR</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    /* =========================================================================
+       1. PROCEDURAL WEB AUDIO ENGINE (SYNTH LASERS, BASS PULSE & SMOOTH FX)
+       ========================================================================= */
+    class SmoothSynthAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.pulseStep = 0;
+        // Deep resonant synthwave bass progression
+        this.bassNotes = [73.42, 65.41, 61.74, 55.0];
+      }
+
+      unlock() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        } catch (_) {}
+      }
+
+      setMuted(m) {
+        this.muted = m;
+      }
+
+      _route(node, panVal = 0) {
+        if (this.ctx.createStereoPanner) {
+          const panner = this.ctx.createStereoPanner();
+          panner.pan.value = Math.max(-1, Math.min(1, panVal));
+          node.connect(panner).connect(this.ctx.destination);
+        } else {
+          node.connect(this.ctx.destination);
+        }
+      }
+
+      playLaser(isLeft, dual = false) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+
+        osc1.type = isLeft ? 'sawtooth' : 'triangle';
+        osc2.type = 'sine';
+        const f0 = isLeft ? (dual ? 1480 : 1280) : (dual ? 1180 : 1020);
+        const f1 = isLeft ? 220 : 170;
+
+        osc1.frequency.setValueAtTime(f0, now);
+        osc1.frequency.exponentialRampToValueAtTime(f1, now + 0.12);
+        osc2.frequency.setValueAtTime(f0 * 0.5, now);
+        osc2.frequency.exponentialRampToValueAtTime(f1 * 0.6, now + 0.12);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3600, now);
+        filter.frequency.exponentialRampToValueAtTime(650, now + 0.12);
+
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        this._route(gain, isLeft ? -0.45 : 0.45);
+
+        osc1.start(now); osc2.start(now);
+        osc1.stop(now + 0.14); osc2.stop(now + 0.14);
+      }
+
+      playEnemyPlasma() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.18);
+        filter.type = 'lowpass';
+        filter.frequency.value = 1100;
+        gain.gain.setValueAtTime(0.055, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+        osc.connect(filter).connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+
+      playShieldHum(shattered = false) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(shattered ? 860 : 540, now);
+        osc.frequency.exponentialRampToValueAtTime(shattered ? 180 : 280, now + 0.16);
+        gain.gain.setValueAtTime(shattered ? 0.14 : 0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+        this._softNoise(shattered ? 0.11 : 0.05, shattered ? 0.09 : 0.04, 2200);
+      }
+
+      playPlasmaBurst(big = false) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Smooth sub-bass impact boom
+        const sub = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(big ? 145 : 115, now);
+        sub.frequency.exponentialRampToValueAtTime(28, now + (big ? 0.36 : 0.24));
+        subGain.gain.setValueAtTime(big ? 0.28 : 0.2, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + (big ? 0.38 : 0.26));
+        sub.connect(subGain).connect(this.ctx.destination);
+        sub.start(now);
+        sub.stop(now + (big ? 0.4 : 0.27));
+
+        // Crystalline energy shimmer
+        const shimmer = big ? [1420, 2120, 2860] : [1680, 2480];
+        shimmer.forEach((f, idx) => {
+          const sOsc = this.ctx.createOscillator();
+          const sGain = this.ctx.createGain();
+          sOsc.type = 'sine';
+          const t0 = now + idx * 0.02;
+          sOsc.frequency.setValueAtTime(f, t0);
+          sOsc.frequency.exponentialRampToValueAtTime(f * 1.18, t0 + 0.12);
+          sGain.gain.setValueAtTime(0.04, t0);
+          sGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.13);
+          sOsc.connect(sGain).connect(this.ctx.destination);
+          sOsc.start(t0);
+          sOsc.stop(t0 + 0.14);
+        });
+
+        this._softNoise(big ? 0.24 : 0.14, big ? 0.14 : 0.09, big ? 820 : 1400);
+      }
+
+      playDiveSwoop() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(680, now);
+        osc.frequency.exponentialRampToValueAtTime(190, now + 0.45);
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1200, now);
+        filter.frequency.exponentialRampToValueAtTime(400, now + 0.45);
+        gain.gain.setValueAtTime(0.075, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+        osc.connect(filter).connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      }
+
+      playBassPulse() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freq = this.bassNotes[this.pulseStep % this.bassNotes.length];
+        this.pulseStep++;
+
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        filter.type = 'lowpass';
+        filter.frequency.value = 260;
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.connect(filter).connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+
+      playPowerUp() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          const t = now + i * 0.048;
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.25);
+        });
+      }
+
+      playPlayerHit() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(48, now + 0.42);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.46);
+        this._softNoise(0.22, 0.16, 520);
+      }
+
+      playWaveClear() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [440, 554.37, 659.25, 880, 1108.73].forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          const t = now + i * 0.075;
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.14, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.36);
+          osc.connect(gain).connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.38);
+        });
+      }
+
+      _softNoise(duration, volume, filterFreq) {
+        const len = Math.floor(this.ctx.sampleRate * duration);
+        const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.6);
+        }
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = filterFreq;
+        const gain = this.ctx.createGain();
+        gain.gain.value = volume;
+        src.connect(filter).connect(gain).connect(this.ctx.destination);
+        src.start();
+      }
+    }
+
+    const audio = new SmoothSynthAudio();
+
+    /* =========================================================================
+       2. RENDERER (ANTI-ALIASED ACES FILMIC HD), SCENE & LIGHTING
+       ========================================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x030514);
+    scene.fog = new THREE.FogExp2(0x030514, 0.0145);
+
+    const camera = new THREE.PerspectiveCamera(66, window.innerWidth / window.innerHeight, 0.05, 180);
+    const DESKTOP_EYE_Y = 1.62;
+    camera.position.set(0, DESKTOP_EYE_Y, 0);
+
+    const cameraRig = new THREE.Group();
+    cameraRig.add(camera);
+    scene.add(cameraRig);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.xr.enabled = true;
+    renderer.xr.setReferenceSpaceType('local-floor');
+    container.appendChild(renderer.domElement);
+
+    // Rich PBR Studio-in-Space Lighting for Glossy Metallic Hulls
+    scene.add(new THREE.HemisphereLight(0x88ccff, 0x26104a, 0.95));
+
+    const keyLight = new THREE.DirectionalLight(0xc2f4ff, 1.65);
+    keyLight.position.set(6, 12, 8);
+    scene.add(keyLight);
+
+    const rimLightLeft = new THREE.DirectionalLight(0x00f0ff, 1.1);
+    rimLightLeft.position.set(-10, 5, -6);
+    scene.add(rimLightLeft);
+
+    const rimLightRight = new THREE.DirectionalLight(0xff2bd6, 1.1);
+    rimLightRight.position.set(10, 4, -8);
+    scene.add(rimLightRight);
+
+    // Dynamic explosion flash point light
+    const explosionLight = new THREE.PointLight(0xffb844, 0, 22, 1.3);
+    scene.add(explosionLight);
+    let explosionLightTimer = 0;
+
+    // Smooth Procedural Radial-Gradient Glow Texture Generator
+    function createRadialGlowTexture(stops, size = 128) {
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      stops.forEach(([o, col]) => g.addColorStop(o, col));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, size, size);
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    const softStarTex = createRadialGlowTexture([
+      [0.0,  'rgba(255, 255, 255, 1.0)'],
+      [0.25, 'rgba(230, 248, 255, 0.88)'],
+      [0.55, 'rgba(140, 210, 255, 0.28)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ], 64);
+
+    const fireGlowTex = createRadialGlowTexture([
+      [0.0,  'rgba(255, 255, 250, 1.0)'],
+      [0.22, 'rgba(255, 215, 105, 0.92)'],
+      [0.5,  'rgba(255, 105, 20, 0.45)'],
+      [0.82, 'rgba(180, 30, 10, 0.12)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ]);
+
+    const cyanGlowTex = createRadialGlowTexture([
+      [0.0,  'rgba(245, 255, 255, 1.0)'],
+      [0.26, 'rgba(0, 245, 255, 0.84)'],
+      [0.62, 'rgba(0, 110, 255, 0.22)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ]);
+
+    const magentaGlowTex = createRadialGlowTexture([
+      [0.0,  'rgba(255, 240, 255, 1.0)'],
+      [0.26, 'rgba(255, 50, 220, 0.84)'],
+      [0.62, 'rgba(160, 0, 255, 0.22)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ]);
+
+    const emeraldGlowTex = createRadialGlowTexture([
+      [0.0,  'rgba(235, 255, 245, 1.0)'],
+      [0.28, 'rgba(40, 255, 140, 0.82)'],
+      [0.64, 'rgba(0, 175, 90, 0.2)'],
+      [1.0,  'rgba(0, 0, 0, 0.0)']
+    ]);
+
+    /* =========================================================================
+       3. DEEP-SPACE ARENA: SOFT CIRCULAR STARS, NEBULAE & ANTI-ALIASED SHADER GRID
+       ========================================================================= */
+    const gridUniforms = {
+      uTime: { value: 0 }
+    };
+
+    function buildSmoothCosmicArena() {
+      const group = new THREE.Group();
+
+      // 1) Smooth Circular Starfield (NO square pixel points!)
+      const starCount = 1600;
+      const starPos = new Float32Array(starCount * 3);
+      const starCol = new Float32Array(starCount * 3);
+      const starPalette = [
+        new THREE.Color(0xffffff),
+        new THREE.Color(0xaeeaff),
+        new THREE.Color(0xffdcb8),
+        new THREE.Color(0xdcb4ff)
+      ];
+      for (let i = 0; i < starCount; i++) {
+        const radius = 42 + Math.random() * 90;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        starPos[i * 3]     = radius * Math.sin(phi) * Math.cos(theta);
+        starPos[i * 3 + 1] = Math.abs(radius * Math.cos(phi)) * 0.88 + 0.8;
+        starPos[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta) - 22;
+
+        const c = starPalette[i % starPalette.length];
+        const b = 0.55 + Math.random() * 0.45;
+        starCol[i * 3]     = c.r * b;
+        starCol[i * 3 + 1] = c.g * b;
+        starCol[i * 3 + 2] = c.b * b;
+      }
+      const starGeo = new THREE.BufferGeometry();
+      starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+      starGeo.setAttribute('color', new THREE.BufferAttribute(starCol, 3));
+      const starMat = new THREE.PointsMaterial({
+        size: 0.72,
+        map: softStarTex,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false
+      });
+      group.add(new THREE.Points(starGeo, starMat));
+
+      // 2) Smooth Volumetric-Style Layered Cosmic Nebula Glows
+      const nebulae = [
+        { pos: [-28, 22, -74], scale: 62, stops: [[0, 'rgba(95, 42, 210, 0.24)'], [0.55, 'rgba(38, 18, 110, 0.1)'], [1, 'rgba(0,0,0,0)']] },
+        { pos: [ 30, 19, -78], scale: 64, stops: [[0, 'rgba(18, 125, 225, 0.22)'], [0.55, 'rgba(22, 42, 120, 0.09)'], [1, 'rgba(0,0,0,0)']] },
+        { pos: [  0, 12, -82], scale: 72, stops: [[0, 'rgba(155, 38, 185, 0.20)'], [0.52, 'rgba(210, 75, 145, 0.07)'], [1, 'rgba(0,0,0,0)']] },
+        { pos: [-18, 9,  -60], scale: 40, stops: [[0, 'rgba(0, 190, 235, 0.14)'], [0.6, 'rgba(40, 20, 100, 0.05)'], [1, 'rgba(0,0,0,0)']] }
+      ];
+      nebulae.forEach(n => {
+        const tex = createRadialGlowTexture(n.stops, 256);
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: tex,
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          fog: false
+        }));
+        sp.position.set(...n.pos);
+        sp.scale.set(n.scale, n.scale * 0.65, 1);
+        group.add(sp);
+      });
+
+      // 3) Anti-Aliased Procedural Shader Perspective Grid Floor (Zero Moiré Shimmering!)
+      const floorGeo = new THREE.PlaneGeometry(160, 120, 1, 1);
+      floorGeo.rotateX(-Math.PI / 2);
+
+      const floorShaderMat = new THREE.ShaderMaterial({
+        uniforms: gridUniforms,
+        transparent: true,
+        depthWrite: true,
+        vertexShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorldPos = wp.xyz;
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          varying vec3 vWorldPos;
+
+          // Screen-space derivative anti-aliased grid function
+          float aaGrid(vec2 coord, float thickness) {
+            vec2 grid = abs(fract(coord - 0.5) - 0.5) / max(fwidth(coord), vec2(0.0001));
+            float line = min(grid.x, grid.y);
+            return 1.0 - smoothstep(0.0, thickness, line);
+          }
+
+          void main() {
+            // Subtle scrolling forward motion
+            vec2 p = vWorldPos.xz;
+            p.y += uTime * 1.65;
+
+            float minorLine = aaGrid(p / 1.5, 1.35);
+            float majorLine = aaGrid(p / 4.5, 1.75);
+
+            // Smooth distance & lateral horizon dissolution
+            float dist = length(vWorldPos.xz * vec2(0.85, 1.0));
+            float fade = exp(-dist * 0.042);
+
+            // Traveling energy wave pulse down the floor
+            float wave = 0.5 + 0.5 * sin(vWorldPos.z * 0.28 + uTime * 2.2);
+
+            vec3 baseCol = vec3(0.015, 0.02, 0.085);
+            vec3 purpleNeon = vec3(0.56, 0.16, 0.96);
+            vec3 cyanNeon = vec3(0.05, 0.82, 1.0);
+
+            vec3 col = baseCol;
+            col += purpleNeon * minorLine * 0.58 * fade;
+            col += mix(purpleNeon, cyanNeon, 0.65 + 0.35 * wave) * majorLine * 0.95 * fade;
+
+            // Soft horizon glow tint
+            col += vec3(0.14, 0.04, 0.30) * smoothstep(52.0, 12.0, dist) * 0.22;
+
+            float alpha = clamp(0.94 * fade + 0.08, 0.0, 1.0);
+            gl_FragColor = vec4(col, alpha);
+          }
+        `
+      });
+
+      const floorMesh = new THREE.Mesh(floorGeo, floorShaderMat);
+      floorMesh.position.set(0, 0, -42);
+      group.add(floorMesh);
+
+      return group;
+    }
+
+    scene.add(buildSmoothCosmicArena());
+
+    // Smooth Gliding Starlight Speed-Streaks (tapered translucent cylinders)
+    const speedStreaks = [];
+    const streakCylGeo = new THREE.CylinderGeometry(0.006, 0.018, 2.2, 6);
+    streakCylGeo.rotateX(Math.PI / 2);
+    const streakCylMat = new THREE.MeshBasicMaterial({
+      color: 0x9ef4ff,
+      transparent: true,
+      opacity: 0.28,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    for (let i = 0; i < 55; i++) {
+      const m = new THREE.Mesh(streakCylGeo, streakCylMat);
+      let x = (Math.random() - 0.5) * 34;
+      if (Math.abs(x) < 3.5) x += Math.sign(x || 1) * 4.5;
+      m.position.set(x, 0.6 + Math.random() * 14, -Math.random() * 64);
+      scene.add(m);
+      speedStreaks.push({ mesh: m, spd: 14 + Math.random() * 16 });
+    }
+
+    function updateSpeedStreaks(dt) {
+      for (const s of speedStreaks) {
+        s.mesh.position.z += s.spd * dt;
+        if (s.mesh.position.z > 4) {
+          let x = (Math.random() - 0.5) * 36;
+          if (Math.abs(x) < 3.5) x += Math.sign(x || 1) * 4.5;
+          s.mesh.position.set(x, 0.6 + Math.random() * 14, -62 - Math.random() * 10);
+        }
+      }
+    }
+
+    /* =========================================================================
+       4. DUAL SLEEK SCULPTED CYBER BLASTERS & SMOOTH HOLO-HANDS
+       ========================================================================= */
+    function createSleekCyberBlaster(side, accentHex, glowTex) {
+      const root = new THREE.Group();
+      const recoilGroup = new THREE.Group();
+      root.add(recoilGroup);
+
+      // Glossy dark-chrome PBR metallic chassis
+      const chromeMat = new THREE.MeshStandardMaterial({
+        color: 0x1b2438,
+        emissive: 0x050b18,
+        roughness: 0.18,
+        metalness: 0.92
+      });
+
+      const trimMat = new THREE.MeshStandardMaterial({
+        color: 0x3a4d70,
+        roughness: 0.22,
+        metalness: 0.88
+      });
+
+      const neonMat = new THREE.MeshBasicMaterial({ color: accentHex });
+      const glowVentMat = new THREE.MeshBasicMaterial({
+        color: accentHex,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending
+      });
+
+      // 1) Smooth Curved Sculpted Upper Receiver (stretched capsule)
+      const receiver = new THREE.Mesh(new THREE.CapsuleGeometry(0.056, 0.30, 12, 24), chromeMat);
+      receiver.rotation.x = Math.PI / 2;
+      receiver.scale.set(0.95, 1.0, 1.15);
+      receiver.position.set(0, 0.035, -0.17);
+      recoilGroup.add(receiver);
+
+      // Sleek curved top cowling fin
+      const cowl = new THREE.Mesh(new THREE.CapsuleGeometry(0.032, 0.24, 10, 20), trimMat);
+      cowl.rotation.x = Math.PI / 2;
+      cowl.position.set(0, 0.075, -0.19);
+      recoilGroup.add(cowl);
+
+      // 2) Dual Smooth Cylindrical Plasma Barrels (stacked sleekly)
+      const upperBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.26, 20), trimMat);
+      upperBarrel.rotation.x = Math.PI / 2;
+      upperBarrel.position.set(0, 0.056, -0.44);
+      recoilGroup.add(upperBarrel);
+
+      const lowerBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.22, 20), chromeMat);
+      lowerBarrel.rotation.x = Math.PI / 2;
+      lowerBarrel.position.set(0, 0.020, -0.41);
+      recoilGroup.add(lowerBarrel);
+
+      // Glowing Muzzle Emitter Rings
+      const muzzleRing = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.006, 12, 24), neonMat);
+      muzzleRing.position.set(0, 0.056, -0.57);
+      recoilGroup.add(muzzleRing);
+
+      // 3) Glowing Side Plasma Vents (smooth curved tubes)
+      [-1, 1].forEach(s => {
+        const vent = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.24, 8, 12), glowVentMat);
+        vent.rotation.x = Math.PI / 2;
+        vent.position.set(s * 0.055, 0.048, -0.26);
+        recoilGroup.add(vent);
+      });
+
+      // 4) Spinning Glowing Energy Core Chamber
+      const coreSpinner = new THREE.Group();
+      coreSpinner.position.set(0, 0.022, -0.12);
+      const coreOrb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.032, 18, 18),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      const coreRingA = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.008, 10, 24), neonMat);
+      coreRingA.rotation.y = Math.PI / 2;
+      const coreRingB = new THREE.Mesh(new THREE.TorusGeometry(0.050, 0.006, 10, 24), glowVentMat);
+      coreRingB.rotation.x = Math.PI / 4;
+      coreSpinner.add(coreOrb, coreRingA, coreRingB);
+      recoilGroup.add(coreSpinner);
+
+      // 5) Smooth Ergonomic Curved Grip
+      const grip = new THREE.Mesh(new THREE.CapsuleGeometry(0.034, 0.11, 10, 18), chromeMat);
+      grip.position.set(0, -0.075, -0.03);
+      grip.rotation.x = 0.28;
+      recoilGroup.add(grip);
+
+      // 6) Smooth Translucent Holographic Forearm & Hand Silhouette (Curved Capsules & Spheres)
+      const handGroup = new THREE.Group();
+      const holoFillMat = new THREE.MeshPhysicalMaterial({
+        color: 0x00d8ff,
+        emissive: 0x00b8ff,
+        emissiveIntensity: 0.55,
+        roughness: 0.15,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.26,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const holoRingMat = new THREE.MeshBasicMaterial({
+        color: 0x7affff,
+        transparent: true,
+        opacity: 0.72,
+        blending: THREE.AdditiveBlending
+      });
+
+      // Smooth Forearm
+      const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.054, 0.24, 20), holoFillMat);
+      forearm.position.set(side * 0.01, -0.165, 0.12);
+      forearm.rotation.set(1.18, 0, side * -0.12);
+      handGroup.add(forearm);
+
+      // Sleek holographic wrist cuff rings
+      for (let r = 0; r < 2; r++) {
+        const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.049 + r * 0.004, 0.004, 8, 24), holoRingMat);
+        cuff.position.set(side * 0.008, -0.14 - r * 0.038, 0.08 + r * 0.05);
+        cuff.rotation.x = 0.42;
+        handGroup.add(cuff);
+      }
+
+      // Smooth Palm & Curled Fingers
+      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 16), holoFillMat);
+      palm.scale.set(0.9, 1.05, 1.05);
+      palm.position.set(0, -0.075, -0.02);
+      handGroup.add(palm);
+
+      for (let f = 0; f < 3; f++) {
+        const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.011, 0.045, 6, 12), holoFillMat);
+        finger.rotation.z = Math.PI / 2;
+        finger.position.set(0, -0.048 - f * 0.028, -0.072);
+        handGroup.add(finger);
+      }
+      recoilGroup.add(handGroup);
+
+      // Muzzle point, soft radial bloom sprite & dynamic light
+      const muzzlePoint = new THREE.Object3D();
+      muzzlePoint.position.set(0, 0.056, -0.59);
+      recoilGroup.add(muzzlePoint);
+
+      const flashMat = new THREE.SpriteMaterial({
+        map: glowTex,
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const flashSprite = new THREE.Sprite(flashMat);
+      flashSprite.position.copy(muzzlePoint.position);
+      flashSprite.scale.set(0.55, 0.55, 1);
+      recoilGroup.add(flashSprite);
+
+      const muzzleLight = new THREE.PointLight(accentHex, 0, 6.0, 1.5);
+      muzzleLight.position.copy(muzzlePoint.position);
+      recoilGroup.add(muzzleLight);
+
+      // Sleek Smooth Laser Sight Cylinder (for VR controllers)
+      const sightGeo = new THREE.CylinderGeometry(0.003, 0.003, 24, 8);
+      sightGeo.rotateX(Math.PI / 2);
+      const sightMesh = new THREE.Mesh(
+        sightGeo,
+        new THREE.MeshBasicMaterial({
+          color: accentHex,
+          transparent: true,
+          opacity: 0.24,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      sightMesh.position.set(0, 0.056, -12.6);
+      sightMesh.visible = false;
+      recoilGroup.add(sightMesh);
+
+      return {
+        root, recoilGroup, coreSpinner, muzzlePoint,
+        flashMat, muzzleLight, sightMesh,
+        accentHex, glowTex, isLeft: side < 0,
+        recoilZ: 0, recoilVel: 0, flashTimer: 0, cooldown: 0
+      };
+    }
+
+    const leftBlaster = createSleekCyberBlaster(-1, 0x00f5ff, cyanGlowTex);
+    const rightBlaster = createSleekCyberBlaster(1, 0xff38dc, magentaGlowTex);
+
+    const DESKTOP_LEFT_POS = new THREE.Vector3(-0.36, 1.24, -0.48);
+    const DESKTOP_RIGHT_POS = new THREE.Vector3(0.36, 1.24, -0.48);
+    leftBlaster.root.position.copy(DESKTOP_LEFT_POS);
+    rightBlaster.root.position.copy(DESKTOP_RIGHT_POS);
+    cameraRig.add(leftBlaster.root, rightBlaster.root);
+
+    // Sleek Smooth Circular 3D Reticle (Desktop)
+    const reticleGroup = new THREE.Group();
+    const reticleOuter = new THREE.Mesh(
+      new THREE.RingGeometry(0.24, 0.275, 48),
+      new THREE.MeshBasicMaterial({ color: 0x00f5ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthTest: false })
+    );
+    const reticleMid = new THREE.Mesh(
+      new THREE.RingGeometry(0.14, 0.155, 36, 1, 0, Math.PI * 1.4),
+      new THREE.MeshBasicMaterial({ color: 0xff4be2, transparent: true, opacity: 0.9, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthTest: false })
+    );
+    const reticleDot = new THREE.Mesh(
+      new THREE.CircleGeometry(0.035, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthTest: false })
+    );
+    reticleGroup.add(reticleOuter, reticleMid, reticleDot);
+    reticleGroup.position.set(0, 2.8, -14.5);
+    scene.add(reticleGroup);
+
+    /* =========================================================================
+       5. HIGH-RES (2x DPR) DIEGETIC GLASS HUD WINGS & HORIZON ARC
+       ========================================================================= */
+    class HighResHUDPanel {
+      constructor(width, height, canvasW, canvasH) {
+        this.canvas = document.createElement('canvas');
+        this.canvas.width = canvasW;
+        this.canvas.height = canvasH;
+        this.ctx = this.canvas.getContext('2d');
+        this.tex = new THREE.CanvasTexture(this.canvas);
+        this.tex.minFilter = THREE.LinearFilter;
+        this.tex.magFilter = THREE.LinearFilter;
+        this.tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+        this.mesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(width, height),
+          new THREE.MeshBasicMaterial({
+            map: this.tex,
+            transparent: true,
+            opacity: 0.96,
+            side: THREE.DoubleSide,
+            depthWrite: false
+          })
+        );
+      }
+      update(drawFn) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        drawFn(this.ctx, this.canvas.width, this.canvas.height);
+        this.tex.needsUpdate = true;
+      }
+    }
+
+    const hudGroup = new THREE.Group();
+    cameraRig.add(hudGroup);
+
+    // 1024x288 High-Res CanvasTextures for razor-sharp typography
+    const leftWingHUD = new HighResHUDPanel(0.88, 0.25, 1024, 288);
+    leftWingHUD.mesh.position.set(-0.80, 0.86, -1.26);
+    leftWingHUD.mesh.rotation.set(-0.26, 0.34, 0.04);
+    hudGroup.add(leftWingHUD.mesh);
+
+    const rightWingHUD = new HighResHUDPanel(0.88, 0.25, 1024, 288);
+    rightWingHUD.mesh.position.set(0.80, 0.86, -1.26);
+    rightWingHUD.mesh.rotation.set(-0.26, -0.34, -0.04);
+    hudGroup.add(rightWingHUD.mesh);
+
+    // Smooth Glowing Cyan Horizon Arc connecting the two HUD wings
+    const horizonArc = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-1.24, 0.77, -1.08),
+      new THREE.Vector3(-0.45, 0.93, -1.34),
+      new THREE.Vector3( 0.45, 0.93, -1.34),
+      new THREE.Vector3( 1.24, 0.77, -1.08)
+    ]);
+    hudGroup.add(new THREE.Mesh(
+      new THREE.TubeGeometry(horizonArc, 48, 0.004, 10, false),
+      new THREE.MeshBasicMaterial({ color: 0xd0ffff, transparent: true, opacity: 0.9 })
+    ));
+    hudGroup.add(new THREE.Mesh(
+      new THREE.TubeGeometry(horizonArc, 48, 0.015, 10, false),
+      new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending, depthWrite: false })
+    ));
+
+    // In-World High-Res VR Announcement Banner
+    const vrBanner = new HighResHUDPanel(2.9, 0.75, 1024, 264);
+    vrBanner.mesh.position.set(0, 3.35, -5.6);
+    vrBanner.mesh.visible = false;
+    cameraRig.add(vrBanner.mesh);
+
+    function drawGlassWing(ctx, w, h, slantRight) {
+      ctx.save();
+      ctx.beginPath();
+      if (slantRight) {
+        ctx.moveTo(28, 22);
+        ctx.lineTo(w - 86, 22);
+        ctx.quadraticCurveTo(w - 58, 22, w - 48, 48);
+        ctx.lineTo(w - 20, h - 42);
+        ctx.quadraticCurveTo(w - 14, h - 22, w - 38, h - 22);
+        ctx.lineTo(28, h - 22);
+        ctx.quadraticCurveTo(16, h - 22, 16, h - 38);
+        ctx.lineTo(16, 38);
+        ctx.quadraticCurveTo(16, 22, 28, 22);
+      } else {
+        ctx.moveTo(86, 22);
+        ctx.lineTo(w - 28, 22);
+        ctx.quadraticCurveTo(w - 16, 22, w - 16, 38);
+        ctx.lineTo(w - 16, h - 38);
+        ctx.quadraticCurveTo(w - 16, h - 22, w - 28, h - 22);
+        ctx.lineTo(38, h - 22);
+        ctx.quadraticCurveTo(14, h - 22, 20, h - 42);
+        ctx.lineTo(48, 48);
+        ctx.quadraticCurveTo(58, 22, 86, 22);
+      }
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, 'rgba(6, 22, 54, 0.80)');
+      grad.addColorStop(1, 'rgba(10, 34, 68, 0.45)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(0, 245, 255, 0.92)';
+      ctx.lineWidth = 6;
+      ctx.shadowColor = '#00f5ff';
+      ctx.shadowBlur = 22;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* =========================================================================
+       6. SMOOTH BEVELED GREEN HEXAGONAL ENERGY BARRIERS
+       ========================================================================= */
+    const hexCells = [];
+    const HEX_R = 0.215;
+
+    function createBeveledHexGeometry(radius) {
+      const shape = new THREE.Shape();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const x = Math.cos(a) * radius;
+        const y = Math.sin(a) * radius;
+        if (i === 0) shape.moveTo(x, y);
+        else shape.lineTo(x, y);
+      }
+      shape.closePath();
+      const geo = new THREE.ExtrudeGeometry(shape, {
+        depth: 0.045,
+        bevelEnabled: true,
+        bevelThickness: 0.018,
+        bevelSize: 0.016,
+        bevelSegments: 3
+      });
+      geo.center();
+      return geo;
+    }
+
+    const sharedBeveledHexGeo = createBeveledHexGeometry(HEX_R * 0.86);
+    const sharedHexRimGeo = new THREE.RingGeometry(HEX_R * 0.88, HEX_R * 0.96, 6);
+
+    function buildSmoothHexBarrier(centerX, centerZ, yaw) {
+      const group = new THREE.Group();
+      group.position.set(centerX, 0.64, centerZ);
+      group.rotation.y = yaw;
+      scene.add(group);
+
+      const layout = [
+        [0, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 0, 0, 0, 1, 1]
+      ];
+      const dx = HEX_R * 1.66;
+      const dy = HEX_R * 1.84;
+
+      for (let r = 0; r < layout.length; r++) {
+        for (let c = 0; c < layout[r].length; c++) {
+          if (!layout[r][c]) continue;
+          const lx = (c - 3) * dx;
+          const ly = (3 - r) * dy + (c % 2 === 1 ? dy * 0.42 : 0);
+
+          const mat = new THREE.MeshPhysicalMaterial({
+            color: 0x10e870,
+            emissive: 0x08a850,
+            emissiveIntensity: 0.6,
+            roughness: 0.14,
+            metalness: 0.15,
+            transparent: true,
+            opacity: 0.34,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+
+          const rimMat = new THREE.MeshBasicMaterial({
+            color: 0x6bffa8,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+
+          const mesh = new THREE.Mesh(sharedBeveledHexGeo, mat);
+          mesh.position.set(lx, ly, 0);
+
+          const rimFront = new THREE.Mesh(sharedHexRimGeo, rimMat);
+          rimFront.position.z = 0.042;
+          mesh.add(rimFront);
+          group.add(mesh);
+
+          group.updateMatrixWorld(true);
+          const worldPos = new THREE.Vector3();
+          mesh.getWorldPosition(worldPos);
+
+          hexCells.push({
+            mesh, mat, rimMat, worldPos,
+            hp: 3, maxHp: 3, alive: true, flashTimer: 0
+          });
+        }
+      }
+    }
+
+    buildSmoothHexBarrier(-1.74, -3.35,  0.18);
+    buildSmoothHexBarrier( 1.74, -3.35, -0.18);
+
+    function setHexCellFull(cell) {
+      cell.hp = cell.maxHp;
+      cell.alive = true;
+      cell.mesh.visible = true;
+      cell.mat.color.setHex(0x10e870);
+      cell.mat.emissive.setHex(0x08a850);
+      cell.mat.opacity = 0.34;
+      cell.rimMat.color.setHex(0x6bffa8);
+      cell.rimMat.opacity = 0.9;
+    }
+
+    function resetAllHexBarriers() {
+      hexCells.forEach(setHexCellFull);
+    }
+
+    function repairHexBarriers(ratio = 0.5) {
+      const damaged = hexCells.filter(c => !c.alive || c.hp < c.maxHp);
+      damaged.sort(() => Math.random() - 0.5);
+      const n = Math.ceil(damaged.length * ratio);
+      for (let i = 0; i < n; i++) setHexCellFull(damaged[i]);
+    }
+
+    function damageHexCell(cell, hitPos) {
+      if (!cell.alive) return;
+      cell.hp -= 1;
+      cell.flashTimer = 0.16;
+      if (cell.hp <= 0) {
+        cell.alive = false;
+        cell.mesh.visible = false;
+        audio.playShieldHum(true);
+        spawnEnergyShards(cell.worldPos, 0x2dff88, 10);
+        spawnSparkStreaks(hitPos, [0x99ffbb, 0x2dff88, 0xffffff], 14, 6.0);
+      } else {
+        audio.playShieldHum(false);
+        cell.mat.color.setHex(cell.hp === 1 ? 0xffd028 : 0x7eff44);
+        cell.mat.emissive.setHex(cell.hp === 1 ? 0xc07a00 : 0x30b820);
+        cell.mat.opacity = cell.hp === 1 ? 0.18 : 0.26;
+        cell.rimMat.color.setHex(cell.hp === 1 ? 0xffe466 : 0xa0ff77);
+        spawnSparkStreaks(hitPos, [0x99ffbb, 0xffffff], 10, 4.5);
+      }
+    }
+
+    /* =========================================================================
+       7. FOUR SMOOTH SCULPTED 3D ALIEN SHIP DESIGNS + SLEEK GALAGA FIGHTERS
+          (ZERO VOXELS / ZERO BLOCKY CUBES — HIGH-POLY GLOSSY PBR CURVES)
+       ========================================================================= */
+
+    // Shared smooth PBR glossy metallic hull helper
+    function makeAlienHullMat(colorHex, emissiveHex, metalness = 0.72, roughness = 0.2) {
+      return new THREE.MeshStandardMaterial({
+        color: colorHex,
+        emissive: emissiveHex,
+        emissiveIntensity: 0.42,
+        metalness,
+        roughness
+      });
+    }
+
+    // ROW 1: PURPLE VOID MANTIS (Curved bio-mechanical hull, crescent wings, violet plasma core)
+    function createVoidMantisShip() {
+      const group = new THREE.Group();
+      const hullMat = makeAlienHullMat(0x521899, 0x7a1cff, 0.78, 0.18);
+      const coreMat = new THREE.MeshBasicMaterial({ color: 0xe89eff });
+      const finMat = new THREE.MeshBasicMaterial({
+        color: 0xc044ff,
+        transparent: true,
+        opacity: 0.78,
+        blending: THREE.AdditiveBlending
+      });
+
+      // Smooth elongated carapace
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.36, 24, 20), hullMat);
+      body.scale.set(0.95, 0.62, 1.35);
+      group.add(body);
+
+      // Sweeping crescent wings (curved torus arcs)
+      const wingArc = new THREE.TorusGeometry(0.62, 0.085, 14, 32, Math.PI * 1.15);
+      const wings = new THREE.Mesh(wingArc, hullMat);
+      wings.rotation.x = Math.PI / 2;
+      wings.rotation.z = -Math.PI * 0.075;
+      wings.scale.set(1.15, 0.85, 0.55);
+      wings.position.z = -0.05;
+      group.add(wings);
+
+      // Pulsing glowing plasma core
+      const core = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 18), coreMat);
+      core.position.set(0, 0.05, 0.34);
+      group.add(core);
+
+      // Two curved glowing energy fins (animated)
+      const fins = [];
+      [-1, 1].forEach(s => {
+        const fin = new THREE.Mesh(new THREE.CapsuleGeometry(0.032, 0.34, 8, 12), finMat);
+        fin.position.set(s * 0.52, 0.16, -0.08);
+        fin.rotation.z = s * -0.58;
+        fin.rotation.x = 0.22;
+        group.add(fin);
+        fins.push(fin);
+      });
+
+      return { group, hullMat, accentParts: fins, colorHex: 0xc837ff };
+    }
+
+    // ROW 2: LIME BIO-DRONE (Tear-drop metallic carapace, curved mandibles, emerald optical visor)
+    function createBioDroneShip() {
+      const group = new THREE.Group();
+      const hullMat = makeAlienHullMat(0x1f7a18, 0x35d410, 0.75, 0.16);
+      const visorMat = new THREE.MeshBasicMaterial({ color: 0xb8ff70 });
+
+      // Smooth LatheGeometry teardrop carapace
+      const pts = [];
+      for (let i = 0; i <= 16; i++) {
+        const t = i / 16;
+        const y = (t - 0.5) * 0.85;
+        const r = Math.sin(t * Math.PI) * (0.44 - t * 0.14);
+        pts.push(new THREE.Vector2(Math.max(0.001, r), y));
+      }
+      const domeGeo = new THREE.LatheGeometry(pts, 28);
+      domeGeo.rotateX(Math.PI / 2);
+      const body = new THREE.Mesh(domeGeo, hullMat);
+      body.scale.set(1.15, 0.78, 1.0);
+      group.add(body);
+
+      // Glowing Emerald Optical Visor
+      const visor = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), visorMat);
+      visor.scale.set(1.25, 0.48, 0.75);
+      visor.position.set(0, 0.03, 0.28);
+      group.add(visor);
+
+      // Smooth Curved Mandibles (TubeGeometry along smooth Bezier paths)
+      const mandibles = [];
+      [-1, 1].forEach(s => {
+        const curve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(s * 0.34, -0.04, 0.10),
+          new THREE.Vector3(s * 0.56, -0.14, 0.32),
+          new THREE.Vector3(s * 0.32, -0.18, 0.52)
+        ]);
+        const mand = new THREE.Mesh(new THREE.TubeGeometry(curve, 18, 0.042, 12, false), hullMat);
+        group.add(mand);
+        mandibles.push(mand);
+      });
+
+      return { group, hullMat, accentParts: mandibles, colorHex: 0x4dff1a };
+    }
+
+    // ROW 3: CYAN INTERCEPTOR (Aerodynamic saucer-wing craft, beveled thrusters, cyan rim ring)
+    function createCyanInterceptorShip() {
+      const group = new THREE.Group();
+      const hullMat = makeAlienHullMat(0x0d5c8c, 0x00b8ff, 0.84, 0.16);
+      const rimMat = new THREE.MeshBasicMaterial({ color: 0x66f8ff });
+
+      // Aerodynamic flattened saucer fuselage
+      const saucer = new THREE.Mesh(new THREE.SphereGeometry(0.48, 28, 20), hullMat);
+      saucer.scale.set(1.45, 0.36, 0.92);
+      group.add(saucer);
+
+      // Smooth glossy upper canopy
+      const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 16), rimMat);
+      canopy.scale.set(1.1, 0.55, 1.2);
+      canopy.position.set(0, 0.12, 0.08);
+      group.add(canopy);
+
+      // Bright Cyan Rim Ring
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.64, 0.022, 12, 36), rimMat);
+      rim.rotation.x = Math.PI / 2;
+      rim.scale.set(1.08, 0.72, 1.0);
+      group.add(rim);
+
+      // Dual Smooth Thruster Pods
+      const pods = [];
+      [-1, 1].forEach(s => {
+        const pod = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.28, 10, 16), hullMat);
+        pod.rotation.x = Math.PI / 2;
+        pod.position.set(s * 0.44, -0.06, -0.12);
+        group.add(pod);
+        pods.push(pod);
+      });
+
+      return { group, hullMat, accentParts: pods, colorHex: 0x00d8ff };
+    }
+
+    // ROW 4: CRIMSON DREAD-SCOUT (Heavy curved armored fuselage, dual crimson cannons, pulsing shield ring)
+    function createDreadScoutShip() {
+      const group = new THREE.Group();
+      const hullMat = makeAlienHullMat(0x7c1028, 0xd81838, 0.82, 0.22);
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0xff5a75 });
+
+      // Heavy sculpted curved fuselage
+      const hull = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.42, 14, 24), hullMat);
+      hull.rotation.z = Math.PI / 2;
+      hull.scale.set(0.85, 1.0, 1.15);
+      group.add(hull);
+
+      // Dual Glowing Crimson Plasma Cannons
+      [-1, 1].forEach(s => {
+        const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.48, 16), hullMat);
+        cannon.rotation.x = Math.PI / 2;
+        cannon.position.set(s * 0.36, -0.04, 0.22);
+        group.add(cannon);
+
+        const tip = new THREE.Mesh(new THREE.SphereGeometry(0.058, 14, 14), glowMat);
+        tip.position.set(s * 0.36, -0.04, 0.46);
+        group.add(tip);
+      });
+
+      // Pulsing Rotating Shield Ring
+      const shieldRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.56, 0.022, 12, 36),
+        new THREE.MeshBasicMaterial({
+          color: 0xff3b5c,
+          transparent: true,
+          opacity: 0.78,
+          blending: THREE.AdditiveBlending
+        })
+      );
+      group.add(shieldRing);
+
+      return { group, hullMat, accentParts: [shieldRing], colorHex: 0xff2a4b };
+    }
+
+    // SLEEK GALAGA DIVE-BOMBER (High-detail curved insectoid starfighter)
+    function createSmoothGalagaFighter(colorHex) {
+      const group = new THREE.Group();
+      const bodyMat = makeAlienHullMat(colorHex, colorHex, 0.8, 0.16);
+      const trimMat = new THREE.MeshStandardMaterial({ color: 0xd0e4ff, metalness: 0.9, roughness: 0.15 });
+
+      // Sculpted aerodynamic fuselage (smooth LatheGeometry)
+      const fPts = [
+        new THREE.Vector2(0.001, -0.68),
+        new THREE.Vector2(0.18, -0.42),
+        new THREE.Vector2(0.26, -0.05),
+        new THREE.Vector2(0.20,  0.34),
+        new THREE.Vector2(0.06,  0.65),
+        new THREE.Vector2(0.001, 0.74)
+      ];
+      const fGeo = new THREE.LatheGeometry(fPts, 24);
+      fGeo.rotateX(Math.PI / 2); // nose faces +Z
+      const fuselage = new THREE.Mesh(fGeo, bodyMat);
+      fuselage.scale.set(1.0, 0.56, 1.0);
+      group.add(fuselage);
+
+      // Smooth Emerald/Cyan Cockpit Canopy
+      const canopy = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 20, 16),
+        new THREE.MeshBasicMaterial({ color: 0x38ffbe })
+      );
+      canopy.scale.set(0.85, 0.55, 1.55);
+      canopy.position.set(0, 0.09, 0.12);
+      group.add(canopy);
+
+      // Swept Curved Insectoid Wings (smooth ExtrudeGeometry)
+      const wingShape = new THREE.Shape();
+      wingShape.moveTo(0.14, 0.18);
+      wingShape.quadraticCurveTo(0.62, 0.08, 0.96, -0.26);
+      wingShape.quadraticCurveTo(0.84, -0.44, 0.58, -0.34);
+      wingShape.quadraticCurveTo(0.32, -0.24, 0.12, -0.32);
+      wingShape.closePath();
+
+      const wingGeo = new THREE.ExtrudeGeometry(wingShape, {
+        depth: 0.04,
+        bevelEnabled: true,
+        bevelThickness: 0.018,
+        bevelSize: 0.018,
+        bevelSegments: 3
+      });
+      wingGeo.rotateX(Math.PI / 2);
+
+      const rightWing = new THREE.Mesh(wingGeo, bodyMat);
+      const leftWing = rightWing.clone();
+      leftWing.scale.x = -1;
+      group.add(rightWing, leftWing);
+
+      // Smooth metallic wingtip stabilizers + glowing thrusters
+      const thrustMat = new THREE.MeshBasicMaterial({
+        color: 0xff9d22,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending
+      });
+      [-1, 1].forEach(s => {
+        const pod = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.24, 8, 14), trimMat);
+        pod.rotation.x = Math.PI / 2;
+        pod.position.set(s * 0.84, 0.0, -0.24);
+        group.add(pod);
+
+        const exhaust = new THREE.Mesh(new THREE.ConeGeometry(0.068, 0.42, 16), thrustMat);
+        exhaust.rotation.x = -Math.PI / 2;
+        exhaust.position.set(s * 0.18, 0, -0.74);
+        group.add(exhaust);
+      });
+
+      return { group, bodyMat };
+    }
+
+    /* =========================================================================
+       8. SMOOTH HIGH-IMPACT EXPLOSION VFX POOL (NO BLOCKY VOXEL DEBRIS)
+       ========================================================================= */
+    const shardPool = [];
+    const streakPool = [];
+    const shockwavePool = [];
+    let shardCursor = 0, streakCursor = 0, shockCursor = 0;
+
+    function initSmoothVFXPools() {
+      // 1) 200 Sleek Curved/Tapered Energy Crystal Shards (Octahedron slivers, not cubes!)
+      const shardGeo = new THREE.OctahedronGeometry(0.11, 0);
+      shardGeo.scale(0.55, 1.9, 0.42);
+      for (let i = 0; i < 200; i++) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          emissive: 0x00f5ff,
+          emissiveIntensity: 1.2,
+          roughness: 0.12,
+          metalness: 0.5,
+          transparent: true,
+          opacity: 1,
+          blending: THREE.AdditiveBlending
+        });
+        const mesh = new THREE.Mesh(shardGeo, mat);
+        mesh.visible = false;
+        scene.add(mesh);
+        shardPool.push({
+          mesh, mat,
+          vel: new THREE.Vector3(),
+          rot: new THREE.Vector3(),
+          life: 0, maxLife: 1, baseScale: 1
+        });
+      }
+
+      // 2) 300 Sleek Velocity-Stretched Glowing Spark Streaks (smooth tapered cylinders)
+      const streakGeo = new THREE.CylinderGeometry(0.008, 0.024, 0.65, 8);
+      streakGeo.rotateX(Math.PI / 2);
+      for (let i = 0; i < 300; i++) {
+        const mat = new THREE.MeshBasicMaterial({
+          color: 0xffaa22,
+          transparent: true,
+          opacity: 1,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const mesh = new THREE.Mesh(streakGeo, mat);
+        mesh.visible = false;
+        scene.add(mesh);
+        streakPool.push({ mesh, mat, vel: new THREE.Vector3(), life: 0, maxLife: 0.45 });
+      }
+
+      // 3) 20 Double Expanding Smooth Neon Shockwave Rings + Plasma Flash Sprite
+      const outerTorusGeo = new THREE.TorusGeometry(0.55, 0.028, 12, 48);
+      const innerTorusGeo = new THREE.TorusGeometry(0.40, 0.016, 10, 40);
+      for (let i = 0; i < 20; i++) {
+        const group = new THREE.Group();
+        const outerMat = new THREE.MeshBasicMaterial({
+          color: 0x38f2ff,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const innerMat = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        group.add(new THREE.Mesh(outerTorusGeo, outerMat));
+        group.add(new THREE.Mesh(innerTorusGeo, innerMat));
+        group.visible = false;
+        scene.add(group);
+
+        const flareMat = new THREE.SpriteMaterial({
+          map: fireGlowTex,
+          color: 0xffeeaa,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const flare = new THREE.Sprite(flareMat);
+        flare.visible = false;
+        scene.add(flare);
+
+        shockwavePool.push({ group, outerMat, innerMat, flare, flareMat, life: 0, maxLife: 0.5, maxScale: 4.2 });
+      }
+    }
+    initSmoothVFXPools();
+
+    function spawnEnergyShards(pos, colorHex, count = 18) {
+      for (let i = 0; i < count; i++) {
+        const s = shardPool[shardCursor];
+        shardCursor = (shardCursor + 1) % shardPool.length;
+        s.mesh.visible = true;
+        s.mesh.position.set(
+          pos.x + (Math.random() - 0.5) * 0.55,
+          pos.y + (Math.random() - 0.5) * 0.45,
+          pos.z + (Math.random() - 0.5) * 0.35
+        );
+        s.baseScale = 0.6 + Math.random() * 1.1;
+        s.mesh.scale.setScalar(s.baseScale);
+        s.mat.color.setHex(i % 3 === 0 ? 0xffffff : colorHex);
+        s.mat.emissive.setHex(colorHex);
+        s.mat.opacity = 1;
+
+        const u = Math.random() * 2 - 1;
+        const phi = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(1 - u * u);
+        const spd = 3.5 + Math.random() * 7.8;
+        s.vel.set(r * Math.cos(phi) * spd, r * Math.sin(phi) * spd + 1.0, u * spd);
+        s.rot.set((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14);
+        s.life = 0.78 + Math.random() * 0.5;
+        s.maxLife = s.life;
+      }
+    }
+
+    function spawnSparkStreaks(pos, palette, count = 26, maxSpd = 12) {
+      for (let i = 0; i < count; i++) {
+        const st = streakPool[streakCursor];
+        streakCursor = (streakCursor + 1) % streakPool.length;
+        st.mesh.visible = true;
+        st.mesh.position.copy(pos);
+        st.mat.color.setHex(Array.isArray(palette) ? palette[i % palette.length] : palette);
+        st.mat.opacity = 1;
+
+        const u = Math.random() * 2 - 1;
+        const phi = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(1 - u * u);
+        const spd = 4.8 + Math.random() * maxSpd;
+        st.vel.set(r * Math.cos(phi) * spd, r * Math.sin(phi) * spd, u * spd);
+        st.mesh.lookAt(pos.x + st.vel.x, pos.y + st.vel.y, pos.z + st.vel.z);
+        st.life = 0.26 + Math.random() * 0.26;
+        st.maxLife = st.life;
+      }
+    }
+
+    function spawnEnemyExplosion(pos, colorHex, big = false) {
+      spawnEnergyShards(pos, colorHex, big ? 26 : 16);
+      spawnSparkStreaks(pos, [0xffffff, 0xffdd55, 0xff7711, colorHex], big ? 38 : 26, big ? 15 : 11);
+
+      const sw = shockwavePool[shockCursor];
+      shockCursor = (shockCursor + 1) % shockwavePool.length;
+      sw.group.visible = true;
+      sw.group.position.copy(pos);
+      sw.group.lookAt(camera.getWorldPosition(new THREE.Vector3()));
+      sw.group.scale.setScalar(0.32);
+      sw.outerMat.color.setHex(big ? 0xffaa44 : 0x38f2ff);
+      sw.outerMat.opacity = 1.0;
+      sw.innerMat.opacity = 1.0;
+
+      sw.flare.visible = true;
+      sw.flare.position.copy(pos);
+      sw.flare.scale.set(big ? 4.4 : 3.2, big ? 4.4 : 3.2, 1);
+      sw.flareMat.opacity = 1.0;
+
+      sw.maxScale = big ? 5.4 : 3.8;
+      sw.life = big ? 0.56 : 0.44;
+      sw.maxLife = sw.life;
+
+      explosionLight.position.copy(pos);
+      explosionLight.color.setHex(big ? 0xffaa44 : colorHex);
+      explosionLight.intensity = big ? 16 : 11;
+      explosionLightTimer = 0.28;
+    }
+
+    /* =========================================================================
+       9. SLEEK LASER BOLTS, ENEMY PLASMA ORBS & GLOWING POWER-UP ORBS
+       ========================================================================= */
+    const playerBolts = [];
+    const enemyBolts = [];
+    const powerUps = [];
+
+    const playerBoltCoreGeo = new THREE.CapsuleGeometry(0.022, 1.35, 6, 12);
+    playerBoltCoreGeo.rotateX(Math.PI / 2);
+
+    const playerBoltTrailGeo = new THREE.ConeGeometry(0.068, 2.1, 12);
+    playerBoltTrailGeo.rotateX(-Math.PI / 2);
+
+    const enemyOrbCoreGeo = new THREE.SphereGeometry(0.13, 18, 18);
+    const enemyOrbTailGeo = new THREE.ConeGeometry(0.11, 0.85, 14);
+    enemyOrbTailGeo.rotateX(-Math.PI / 2);
+
+    function fireBlaster(blaster, isDual = false) {
+      const worldPos = new THREE.Vector3();
+      const worldQuat = new THREE.Quaternion();
+      blaster.muzzlePoint.getWorldPosition(worldPos);
+      blaster.muzzlePoint.getWorldQuaternion(worldQuat);
+      const worldDir = new THREE.Vector3(0, 0, -1).applyQuaternion(worldQuat).normalize();
+
+      const group = new THREE.Group();
+      const core = new THREE.Mesh(playerBoltCoreGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      const glow = new THREE.Mesh(
+        playerBoltTrailGeo,
+        new THREE.MeshBasicMaterial({
+          color: blaster.accentHex,
+          transparent: true,
+          opacity: 0.62,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      glow.position.z = -0.35;
+      group.add(core, glow);
+
+      group.position.copy(worldPos);
+      group.lookAt(worldPos.clone().add(worldDir));
+      scene.add(group);
+
+      playerBolts.push({
+        mesh: group,
+        vel: worldDir.multiplyScalar(46.0),
+        life: 1.5
+      });
+
+      blaster.recoilVel = 1.6;
+      blaster.flashTimer = 0.09;
+      blaster.flashMat.opacity = 1.0;
+      blaster.muzzleLight.intensity = 6.0;
+      audio.playLaser(blaster.isLeft, isDual);
+      triggerHaptic(blaster.isLeft ? 'left' : 'right', 0.36, 34);
+    }
+
+    function spawnEnemyPlasma(originPos, targetPos, speed = 11.5) {
+      const dir = targetPos.clone().sub(originPos).normalize();
+      const group = new THREE.Group();
+
+      const core = new THREE.Mesh(enemyOrbCoreGeo, new THREE.MeshBasicMaterial({ color: 0xfff4c2 }));
+      const tail = new THREE.Mesh(enemyOrbTailGeo, new THREE.MeshBasicMaterial({
+        color: 0xff6e0a,
+        transparent: true,
+        opacity: 0.78,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      }));
+      tail.position.z = -0.4;
+
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: fireGlowTex,
+        color: 0xff8c1a,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      }));
+      halo.scale.set(0.75, 0.75, 1);
+      group.add(core, tail, halo);
+
+      group.position.copy(originPos);
+      group.lookAt(originPos.clone().add(dir));
+      scene.add(group);
+
+      enemyBolts.push({ mesh: group, vel: dir.multiplyScalar(speed), life: 4.5 });
+      audio.playEnemyPlasma();
+    }
+
+    // Catchable/Shootable Glowing Power-Up Orbs
+    const POWERUP_DEFS = [
+      { id: 'RAPID',  color: 0x00f5ff, tex: cyanGlowTex,    title: 'RAPID FIRE!' },
+      { id: 'DUAL',   color: 0xff38dc, tex: magentaGlowTex, title: 'DUAL PLASMA BEAM!' },
+      { id: 'REPAIR', color: 0x2dff88, tex: emeraldGlowTex, title: 'SHIELDS REPAIRED!' },
+      { id: 'LIFE',   color: 0xffd23f, tex: fireGlowTex,    title: '+1 EXTRA LIFE!' }
+    ];
+
+    const orbCoreGeo = new THREE.SphereGeometry(0.24, 24, 24);
+    const orbRingGeo = new THREE.TorusGeometry(0.38, 0.024, 12, 32);
+
+    function spawnPowerUpOrb(pos) {
+      if (powerUps.length >= 2) return;
+      const def = POWERUP_DEFS[Math.floor(Math.random() * POWERUP_DEFS.length)];
+      const group = new THREE.Group();
+
+      const coreMat = new THREE.MeshPhysicalMaterial({
+        color: def.color,
+        emissive: def.color,
+        emissiveIntensity: 0.9,
+        roughness: 0.1,
+        metalness: 0.2,
+        transparent: true,
+        opacity: 0.92
+      });
+      group.add(new THREE.Mesh(orbCoreGeo, coreMat));
+
+      const ring1 = new THREE.Mesh(orbRingGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      const ring2 = new THREE.Mesh(orbRingGeo, new THREE.MeshBasicMaterial({ color: def.color }));
+      ring2.rotation.x = Math.PI / 2;
+      group.add(ring1, ring2);
+
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: def.tex,
+        color: def.color,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      }));
+      glow.scale.set(1.35, 1.35, 1);
+      group.add(glow);
+
+      group.position.copy(pos);
+      scene.add(group);
+      powerUps.push({ mesh: group, ring1, ring2, def, speedZ: 4.8 });
+    }
+
+    /* =========================================================================
+       10. GAME STATE, SMOOTH FORMATION GLIDING & WAVE SPAWNER
+       ========================================================================= */
+    const state = {
+      mode: 'MENU', // MENU, PLAYING, PAUSED, WAVE_CLEAR, GAME_OVER
+      score: 0,
+      wave: 1,
+      lives: 5,
+      maxLives: 5,
+      combo: 0,
+      maxCombo: 1,
+      comboTimer: 0,
+      rapidTimer: 0,
+      dualTimer: 0,
+      invulnTimer: 0,
+      waveClearTimer: 0,
+      bannerTimer: 0,
+      screenShake: 0,
+      inVR: false,
+      fireToggle: false,
+      formationDir: 1,
+      formationBaseZ: -18.5,
+      bassTimer: 0,
+      diveTimer: 3.0,
+      enemyFireTimer: 1.4
+    };
+
+    const formationGroup = new THREE.Group();
+    scene.add(formationGroup);
+    const aliens = [];
+    const galagaFighters = [];
+
+    function clearEnemies() {
+      for (const a of aliens) {
+        formationGroup.remove(a.mesh);
+        a.hullMat.dispose();
+      }
+      aliens.length = 0;
+
+      for (const g of galagaFighters) {
+        scene.remove(g.mesh);
+        g.bodyMat.dispose();
+      }
+      galagaFighters.length = 0;
+
+      for (const b of playerBolts) scene.remove(b.mesh);
+      playerBolts.length = 0;
+      for (const b of enemyBolts) scene.remove(b.mesh);
+      enemyBolts.length = 0;
+      for (const p of powerUps) scene.remove(p.mesh);
+      powerUps.length = 0;
+    }
+
+    function spawnWave(waveNum) {
+      clearEnemies();
+      state.wave = waveNum;
+      state.mode = 'PLAYING';
+      state.formationDir = 1;
+      state.formationBaseZ = -18.8 + Math.min(waveNum - 1, 4) * 0.75;
+      state.bassTimer = 0;
+      state.diveTimer = Math.max(1.3, 3.0 - waveNum * 0.2);
+      state.enemyFireTimer = 1.25;
+
+      formationGroup.position.set(0, 0, state.formationBaseZ);
+
+      // 4 Distinct Sleek Sculpted 3D Alien Rows (7 columns)
+      const rowDefs = [
+        { builder: createVoidMantisShip,      y: 6.45, z: -1.5, pts: 300, hp: 1, kind: 'mantis' },
+        { builder: createBioDroneShip,        y: 5.10, z: -0.7, pts: 200, hp: 1, kind: 'drone' },
+        { builder: createCyanInterceptorShip, y: 3.78, z:  0.1, pts: 150, hp: 1, kind: 'interceptor' },
+        { builder: createDreadScoutShip,      y: 2.50, z:  0.8, pts: 250, hp: waveNum >= 2 ? 2 : 1, kind: 'dread' }
+      ];
+
+      const cols = 7;
+      for (let r = 0; r < rowDefs.length; r++) {
+        const def = rowDefs[r];
+        for (let c = 0; c < cols; c++) {
+          const { group, hullMat, accentParts, colorHex } = def.builder();
+          const lx = (c - (cols - 1) / 2) * 1.92;
+          group.position.set(lx, def.y, def.z);
+          formationGroup.add(group);
+
+          aliens.push({
+            mesh: group,
+            hullMat,
+            accentParts,
+            colorHex,
+            kind: def.kind,
+            baseY: def.y,
+            phase: r * 0.9 + c * 0.55,
+            pts: def.pts,
+            hp: def.hp,
+            radius: 0.78,
+            flashTimer: 0
+          });
+        }
+      }
+
+      // Flanking Sleek Galaga Dive-Bombers
+      const galagaSpecs = [
+        { home: new THREE.Vector3(-8.6, 5.7, -15.6), color: 0x9c32ff },
+        { home: new THREE.Vector3( 8.6, 5.7, -15.6), color: 0x16e878 },
+        { home: new THREE.Vector3(-8.2, 3.2, -14.2), color: 0xff2855 },
+        { home: new THREE.Vector3( 8.2, 3.2, -14.2), color: 0xd828ff }
+      ];
+      if (waveNum >= 2) {
+        galagaSpecs.push(
+          { home: new THREE.Vector3(-2.6, 2.25, -13.4), color: 0x7b44ff },
+          { home: new THREE.Vector3( 2.6, 2.25, -13.4), color: 0x00d8ff }
+        );
+      }
+
+      galagaSpecs.forEach((spec, idx) => {
+        const { group, bodyMat } = createSmoothGalagaFighter(spec.color);
+        group.position.copy(spec.home);
+        scene.add(group);
+        galagaFighters.push({
+          mesh: group,
+          bodyMat,
+          home: spec.home.clone(),
+          colorHex: spec.color,
+          hp: 2 + Math.floor((waveNum - 1) / 2),
+          pts: 500,
+          radius: 0.88,
+          state: 'ESCORT',
+          diveT: 0,
+          diveCurve: null,
+          shotsFired: 0,
+          phase: idx * 1.35,
+          flashTimer: 0
+        });
+      });
+
+      if (waveNum > 1) repairHexBarriers(0.5);
+      hudDirty = true;
+      showAnnouncement(`WAVE ${String(waveNum).padStart(2, '0')}`, '3D SWARM APPROACHING', 2.2, '#00f5ff');
+    }
+
+    function launchGalagaDive() {
+      const escorts = galagaFighters.filter(g => g.state === 'ESCORT');
+      if (escorts.length === 0) return;
+      const fighter = escorts[Math.floor(Math.random() * escorts.length)];
+      fighter.state = 'DIVING';
+      fighter.diveT = 0;
+      fighter.shotsFired = 0;
+
+      const start = fighter.mesh.position.clone();
+      const targetX = cameraRig.position.x + (Math.random() - 0.5) * 2.4;
+      const side = Math.sign(start.x || 1);
+
+      fighter.diveCurve = new THREE.CatmullRomCurve3([
+        start,
+        new THREE.Vector3(start.x * 0.6 + side * 2.4, start.y - 1.1, -10.5),
+        new THREE.Vector3(targetX, 2.05, -5.0),
+        new THREE.Vector3(-side * 4.4, 3.8, -4.0),
+        new THREE.Vector3(-side * 6.8, 6.4, -12.0),
+        fighter.home.clone()
+      ]);
+      audio.playDiveSwoop();
+    }
+
+    /* =========================================================================
+       11. HIGH-RES DIEGETIC HUD & ANNOUNCEMENTS
+       ========================================================================= */
+    const comboPopupEl = document.getElementById('combo-popup');
+    const comboTitleEl = document.getElementById('combo-title');
+    const comboSubEl = document.getElementById('combo-sub');
+    const damageFlashEl = document.getElementById('damage-flash');
+
+    function showAnnouncement(title, sub, duration = 1.8, color = '#00f5ff') {
+      state.bannerTimer = duration;
+      if (!state.inVR) {
+        comboTitleEl.textContent = title;
+        comboSubEl.textContent = sub;
+        comboTitleEl.style.textShadow = `0 0 18px ${color}`;
+        comboPopupEl.classList.add('show');
+      }
+      vrBanner.mesh.visible = true;
+      vrBanner.update((ctx, w, h) => {
+        ctx.fillStyle = 'rgba(6, 16, 44, 0.82)';
+        ctx.beginPath();
+        ctx.roundRect(16, 16, w - 32, h - 32, 26);
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 6;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 78px "Orbitron", system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 18;
+        ctx.fillText(title, w / 2, 126);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#b4f4ff';
+        ctx.font = '700 38px "Rajdhani", system-ui, sans-serif';
+        ctx.fillText(sub, w / 2, 198);
+      });
+    }
+
+    let hudDirty = true;
+    function refreshDiegeticHUD() {
+      hudDirty = false;
+
+      // Bottom-Left Wing: SCORE + MULTIPLIER / ACTIVE POWER-UP
+      leftWingHUD.update((ctx, w, h) => {
+        drawGlassWing(ctx, w, h, true);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 84px "Orbitron", system-ui, sans-serif';
+        ctx.shadowColor = '#00f5ff';
+        ctx.shadowBlur = 20;
+        ctx.fillText(`SCORE: ${state.score.toLocaleString()}`, 56, 146);
+        ctx.shadowBlur = 0;
+
+        if (state.dualTimer > 0) {
+          ctx.fillStyle = '#ff5ce8';
+          ctx.font = '700 44px "Orbitron", system-ui, sans-serif';
+          ctx.fillText(`✦ DUAL BEAM ${Math.ceil(state.dualTimer)}s`, 56, 226);
+        } else if (state.rapidTimer > 0) {
+          ctx.fillStyle = '#00f5ff';
+          ctx.font = '700 44px "Orbitron", system-ui, sans-serif';
+          ctx.fillText(`⚡ RAPID FIRE ${Math.ceil(state.rapidTimer)}s`, 56, 226);
+        } else if (state.combo > 1) {
+          ctx.fillStyle = '#ffd23f';
+          ctx.font = '800 46px "Orbitron", system-ui, sans-serif';
+          ctx.fillText(`MULTIPLIER x${Math.min(state.combo, 8)}`, 56, 226);
+        } else {
+          ctx.fillStyle = 'rgba(170, 236, 255, 0.78)';
+          ctx.font = '600 40px "Rajdhani", system-ui, sans-serif';
+          ctx.fillText('DUAL CYBER BLASTERS ONLINE', 56, 226);
+        }
+      });
+
+      // Bottom-Right Wing: WAVE + SMOOTH SHIELD/LIFE BARS
+      rightWingHUD.update((ctx, w, h) => {
+        drawGlassWing(ctx, w, h, false);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 82px "Orbitron", system-ui, sans-serif';
+        ctx.shadowColor = '#00f5ff';
+        ctx.shadowBlur = 20;
+        ctx.fillText(`WAVE: ${String(state.wave).padStart(2, '0')}`, 110, 138);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#8beeff';
+        ctx.font = '700 38px "Orbitron", system-ui, sans-serif';
+        ctx.fillText('SHIELD', 110, 226);
+
+        for (let i = 0; i < state.maxLives; i++) {
+          const bx = 308 + i * 124;
+          const by = 186;
+          ctx.beginPath();
+          ctx.roundRect(bx, by, 102, 46, 12);
+          if (i < state.lives) {
+            ctx.fillStyle = state.lives <= 1 ? '#ff3355' : '#2dff88';
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.shadowBlur = 16;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          } else {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       12. DESKTOP, TOUCH & WEBXR DUAL-CONTROLLER INPUTS
+       ========================================================================= */
+    const keys = { left: false, right: false, fire: false, dual: false };
+    const mouseNDC = new THREE.Vector2(0, 0.14);
+    const aimRaycaster = new THREE.Raycaster();
+    const aimPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 15.0);
+    const aimPoint = new THREE.Vector3(0, 3.0, -15.0);
+
+    window.addEventListener('mousemove', (e) => {
+      if (state.inVR) return;
+      mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      if (state.inVR || e.target.closest('button') || e.target.closest('.panel')) return;
+      audio.unlock();
+      if (e.button === 2) keys.dual = true;
+      keys.fire = true;
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 2) keys.dual = false;
+      keys.fire = false;
+    });
+
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = true;
+      if (e.code === 'Space') { e.preventDefault(); audio.unlock(); keys.fire = true; }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dual = true;
+      if ((e.code === 'KeyP' || e.code === 'Escape') && !state.inVR) togglePause();
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
+      if (e.code === 'Space') keys.fire = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.dual = false;
+    });
+
+    // Touch controls
+    const touchControlsEl = document.getElementById('touch-controls');
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    document.getElementById('touch-left').addEventListener('touchstart', (e) => { e.stopPropagation(); keys.left = true; }, { passive: true });
+    document.getElementById('touch-left').addEventListener('touchend', () => { keys.left = false; });
+    document.getElementById('touch-right').addEventListener('touchstart', (e) => { e.stopPropagation(); keys.right = true; }, { passive: true });
+    document.getElementById('touch-right').addEventListener('touchend', () => { keys.right = false; });
+
+    window.addEventListener('touchstart', (e) => {
+      if (state.inVR || e.target.closest('button') || e.target.closest('.panel')) return;
+      audio.unlock();
+      const t = e.touches[0];
+      mouseNDC.x = (t.clientX / window.innerWidth) * 2 - 1;
+      mouseNDC.y = -(t.clientY / window.innerHeight) * 2 + 1;
+      keys.fire = true;
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (state.inVR || e.target.closest('button') || e.target.closest('.panel')) return;
+      const t = e.touches[0];
+      mouseNDC.x = (t.clientX / window.innerWidth) * 2 - 1;
+      mouseNDC.y = -(t.clientY / window.innerHeight) * 2 + 1;
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => { keys.fire = false; });
+
+    // WebXR Dual 6DOF Controllers
+    const xrControllers = { left: null, right: null };
+    const xrFiring = { left: false, right: false };
+
+    for (let i = 0; i < 2; i++) {
+      const ctrl = renderer.xr.getController(i);
+      ctrl.addEventListener('connected', (event) => {
+        const hand = event.data.handedness === 'left' ? 'left' : 'right';
+        ctrl.userData.hand = hand;
+        ctrl.userData.inputSource = event.data;
+        xrControllers[hand] = ctrl;
+        if (state.inVR) mountBlastersToVR();
+      });
+      ctrl.addEventListener('disconnected', () => {
+        const hand = ctrl.userData.hand;
+        if (hand && xrControllers[hand] === ctrl) xrControllers[hand] = null;
+        ctrl.userData.inputSource = null;
+      });
+      ctrl.addEventListener('selectstart', () => {
+        const hand = ctrl.userData.hand || (i === 0 ? 'left' : 'right');
+        xrFiring[hand] = true;
+        if (state.mode === 'GAME_OVER') startNewGame();
+      });
+      ctrl.addEventListener('selectend', () => {
+        const hand = ctrl.userData.hand || (i === 0 ? 'left' : 'right');
+        xrFiring[hand] = false;
+      });
+      cameraRig.add(ctrl);
+    }
+
+    function mountBlastersToVR() {
+      if (xrControllers.left) {
+        xrControllers.left.add(leftBlaster.root);
+        leftBlaster.root.position.set(0, 0, 0);
+        leftBlaster.root.rotation.set(0, 0, 0);
+        leftBlaster.sightMesh.visible = true;
+      }
+      if (xrControllers.right) {
+        xrControllers.right.add(rightBlaster.root);
+        rightBlaster.root.position.set(0, 0, 0);
+        rightBlaster.root.rotation.set(0, 0, 0);
+        rightBlaster.sightMesh.visible = true;
+      }
+      reticleGroup.visible = false;
+    }
+
+    function mountBlastersToDesktop() {
+      cameraRig.add(leftBlaster.root, rightBlaster.root);
+      leftBlaster.root.position.copy(DESKTOP_LEFT_POS);
+      rightBlaster.root.position.copy(DESKTOP_RIGHT_POS);
+      leftBlaster.sightMesh.visible = false;
+      rightBlaster.sightMesh.visible = false;
+      reticleGroup.visible = true;
+    }
+
+    function triggerHaptic(hand, intensity = 0.4, durationMs = 40) {
+      if (!state.inVR) return;
+      const ctrl = xrControllers[hand];
+      const src = ctrl && ctrl.userData.inputSource;
+      if (src && src.gamepad && src.gamepad.hapticActuators && src.gamepad.hapticActuators.length > 0) {
+        try { src.gamepad.hapticActuators[0].pulse(intensity, durationMs); } catch (_) {}
+      }
+    }
+
+    /* =========================================================================
+       13. UI OVERLAYS, PAUSE, WEBXR ENTRY & GAME FLOW
+       ========================================================================= */
+    const startOverlay = document.getElementById('start-overlay');
+    const pauseOverlay = document.getElementById('pause-overlay');
+    const endOverlay = document.getElementById('end-overlay');
+    const btnMenu = document.getElementById('btn-menu');
+    const btnPause = document.getElementById('btn-pause');
+    const btnEnterVR = document.getElementById('btn-enter-vr');
+    const btnVRTop = document.getElementById('btn-vr-top');
+    const btnEndVR = document.getElementById('btn-end-vr');
+    const vrStatusEl = document.getElementById('vr-status');
+
+    let xrSupported = false;
+    async function checkVR() {
+      if (!navigator.xr) {
+        vrStatusEl.textContent = 'WebXR not detected — Play immediately in Smooth HD Desktop mode!';
+        return;
+      }
+      try {
+        xrSupported = await navigator.xr.isSessionSupported('immersive-vr');
+        if (xrSupported) {
+          btnEnterVR.disabled = false;
+          btnVRTop.style.display = 'inline-block';
+          btnEndVR.style.display = 'inline-block';
+          vrStatusEl.textContent = 'WebXR VR Ready (Meta Quest / PCVR supported)';
+          vrStatusEl.style.color = '#6dffb0';
+        } else {
+          vrStatusEl.textContent = 'No VR headset detected — Smooth HD Desktop & Touch ready!';
+        }
+      } catch (_) {
+        vrStatusEl.textContent = 'Smooth HD Desktop & Touch mode ready!';
+      }
+    }
+    checkVR();
+
+    function startNewGame() {
+      audio.unlock();
+      state.score = 0;
+      state.lives = state.maxLives;
+      state.combo = 0;
+      state.maxCombo = 1;
+      state.comboTimer = 0;
+      state.rapidTimer = 0;
+      state.dualTimer = 0;
+      state.invulnTimer = 0;
+      cameraRig.position.set(0, 0, 0);
+
+      resetAllHexBarriers();
+      startOverlay.classList.add('hidden');
+      pauseOverlay.classList.add('hidden');
+      endOverlay.classList.add('hidden');
+
+      if (!state.inVR) {
+        btnMenu.style.display = 'inline-block';
+        btnPause.style.display = 'inline-block';
+        if (isTouchDevice) touchControlsEl.style.display = 'flex';
+      }
+      spawnWave(1);
+    }
+
+    function togglePause() {
+      if (state.mode === 'PLAYING') {
+        state.mode = 'PAUSED';
+        pauseOverlay.classList.remove('hidden');
+        btnPause.textContent = 'RESUME';
+      } else if (state.mode === 'PAUSED') {
+        state.mode = 'PLAYING';
+        pauseOverlay.classList.add('hidden');
+        btnPause.textContent = 'PAUSE';
+      }
+    }
+
+    function triggerGameOver() {
+      state.mode = 'GAME_OVER';
+      audio.playPlayerHit();
+      touchControlsEl.style.display = 'none';
+      btnPause.style.display = 'none';
+      showAnnouncement('GAME OVER', state.inVR ? 'PULL TRIGGER TO RETRY' : `FINAL SCORE: ${state.score.toLocaleString()}`, 8.0, '#ff38dc');
+
+      if (!state.inVR) {
+        document.getElementById('final-score').textContent = state.score.toLocaleString();
+        document.getElementById('final-wave').textContent = String(state.wave).padStart(2, '0');
+        document.getElementById('final-combo').textContent = `x${state.maxCombo}`;
+        endOverlay.classList.remove('hidden');
+      }
+    }
+
+    function damagePlayer() {
+      if (state.invulnTimer > 0 || state.mode !== 'PLAYING') return;
+      state.lives -= 1;
+      state.combo = 0;
+      state.invulnTimer = 1.1;
+      hudDirty = true;
+      audio.playPlayerHit();
+      triggerHaptic('left', 0.9, 150);
+      triggerHaptic('right', 0.9, 150);
+
+      if (!state.inVR) {
+        state.screenShake = 0.11;
+        damageFlashEl.style.opacity = '1';
+        setTimeout(() => { damageFlashEl.style.opacity = '0'; }, 200);
+      }
+      if (state.lives <= 0) {
+        triggerGameOver();
+      } else {
+        showAnnouncement('SHIELD HIT!', `${state.lives} BARS REMAINING`, 1.2, '#ff3860');
+      }
+    }
+
+    function applyPowerUp(def) {
+      audio.playPowerUp();
+      triggerHaptic('left', 0.55, 65);
+      triggerHaptic('right', 0.55, 65);
+      const colStr = '#' + def.color.toString(16).padStart(6, '0');
+      showAnnouncement(def.title, 'POWER-UP ACTIVATED', 1.6, colStr);
+
+      if (def.id === 'RAPID') {
+        state.rapidTimer = 10.0;
+      } else if (def.id === 'DUAL') {
+        state.dualTimer = 10.0;
+      } else if (def.id === 'REPAIR') {
+        repairHexBarriers(1.0);
+      } else if (def.id === 'LIFE') {
+        state.lives = Math.min(state.maxLives, state.lives + 1);
+      }
+      hudDirty = true;
+    }
+
+    async function enterVRSession() {
+      if (!xrSupported) return;
+      audio.unlock();
+      try {
+        const session = await navigator.xr.requestSession('immersive-vr', {
+          optionalFeatures: ['local-floor', 'bounded-floor']
+        });
+        await renderer.xr.setSession(session);
+        state.inVR = true;
+        startOverlay.classList.add('hidden');
+        pauseOverlay.classList.add('hidden');
+        endOverlay.classList.add('hidden');
+        document.getElementById('top-bar').style.display = 'none';
+        touchControlsEl.style.display = 'none';
+        comboPopupEl.classList.remove('show');
+        mountBlastersToVR();
+        if (state.mode === 'MENU' || state.mode === 'PAUSED') startNewGame();
+
+        session.addEventListener('end', () => {
+          state.inVR = false;
+          mountBlastersToDesktop();
+          camera.position.set(0, DESKTOP_EYE_Y, 0);
+          camera.rotation.set(0, 0, 0);
+          document.getElementById('top-bar').style.display = 'flex';
+          if (state.mode === 'GAME_OVER') endOverlay.classList.remove('hidden');
+        });
+      } catch (_) {
+        vrStatusEl.textContent = 'Could not start WebXR session.';
+      }
+    }
+
+    document.getElementById('btn-play-desktop').addEventListener('click', startNewGame);
+    document.getElementById('btn-restart').addEventListener('click', startNewGame);
+    document.getElementById('btn-pause-restart').addEventListener('click', startNewGame);
+    document.getElementById('btn-resume').addEventListener('click', togglePause);
+    btnPause.addEventListener('click', togglePause);
+    btnEnterVR.addEventListener('click', enterVRSession);
+    btnVRTop.addEventListener('click', enterVRSession);
+    btnEndVR.addEventListener('click', enterVRSession);
+
+    btnMenu.addEventListener('click', () => {
+      state.mode = 'MENU';
+      startOverlay.classList.remove('hidden');
+      pauseOverlay.classList.add('hidden');
+      endOverlay.classList.add('hidden');
+      touchControlsEl.style.display = 'none';
+      btnPause.style.display = 'none';
+    });
+
+    const btnMute = document.getElementById('btn-mute');
+    btnMute.addEventListener('click', () => {
+      audio.unlock();
+      audio.setMuted(!audio.muted);
+      btnMute.textContent = soundLabel();
+    });
+    function soundLabel() { return audio.muted ? 'MUTED' : 'SOUND ON'; }
+
+    /* =========================================================================
+       14. MAIN SMOOTH 60-90 FPS SIMULATION & RENDER LOOP
+       ========================================================================= */
+    let lastTime = performance.now();
+    let hudTimer = 0;
+    const tempVec = new THREE.Vector3();
+    const playerWorldPos = new THREE.Vector3();
+
+    function registerKill(pos, colorHex, basePts, big = false) {
+      state.combo += 1;
+      state.comboTimer = 2.8;
+      if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+      state.score += basePts * Math.min(state.combo, 8);
+      hudDirty = true;
+
+      spawnEnemyExplosion(pos, colorHex, big);
+      audio.playPlasmaBurst(big);
+      if (!state.inVR) state.screenShake = Math.min(0.075, state.screenShake + (big ? 0.04 : 0.02));
+
+      if (Math.random() < (big ? 0.30 : 0.10)) {
+        spawnPowerUpOrb(pos);
+      }
+      if (state.combo > 0 && state.combo % 6 === 0) {
+        showAnnouncement(`COMBO x${Math.min(state.combo, 8)}!`, 'SWARM OVERLOAD', 1.15, '#ffd23f');
+      }
+    }
+
+    function updateBlasterDynamics(blaster, dt) {
+      if (blaster.cooldown > 0) blaster.cooldown -= dt;
+
+      // Smooth spinning reactor energy core
+      blaster.coreSpinner.rotation.y += dt * 3.8;
+      blaster.coreSpinner.rotation.z += dt * 2.2;
+
+      // Smooth spring-damped recoil kickback
+      blaster.recoilVel += (-blaster.recoilZ * 210 - blaster.recoilVel * 19) * dt;
+      blaster.recoilZ += blaster.recoilVel * dt;
+      blaster.recoilGroup.position.z = blaster.recoilZ;
+      blaster.recoilGroup.rotation.x = blaster.recoilZ * 1.1;
+
+      if (blaster.flashTimer > 0) {
+        blaster.flashTimer = Math.max(0, blaster.flashTimer - dt);
+        const r = blaster.flashTimer / 0.09;
+        blaster.flashMat.opacity = r;
+        blaster.muzzleLight.intensity = r * 6.0;
+      } else {
+        blaster.flashMat.opacity = 0;
+        blaster.muzzleLight.intensity = 0;
+      }
+    }
+
+    function animate(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.033);
+      lastTime = now;
+      const elapsed = now * 0.001;
+
+      // Always keep space environment alive & smooth
+      gridUniforms.uTime.value = elapsed;
+      updateSpeedStreaks(dt);
+
+      if (state.mode === 'PAUSED') {
+        renderer.render(scene, camera);
+        return;
+      }
+
+      // 1. Desktop Strafing, Smooth Mouse Aiming & Reticle
+      if (!state.inVR) {
+        const strafeSpeed = 4.8;
+        if (keys.left)  cameraRig.position.x -= strafeSpeed * dt;
+        if (keys.right) cameraRig.position.x += strafeSpeed * dt;
+        cameraRig.position.x = THREE.MathUtils.clamp(cameraRig.position.x, -3.4, 3.4);
+
+        if (state.screenShake > 0) {
+          state.screenShake = Math.max(0, state.screenShake - dt * 0.36);
+          camera.position.set(
+            (Math.random() - 0.5) * state.screenShake,
+            DESKTOP_EYE_Y + (Math.random() - 0.5) * state.screenShake,
+            0
+          );
+        } else {
+          camera.position.set(0, DESKTOP_EYE_Y, 0);
+        }
+
+        aimRaycaster.setFromCamera(mouseNDC, camera);
+        aimRaycaster.ray.intersectPlane(aimPlane, aimPoint);
+        aimPoint.x = THREE.MathUtils.clamp(aimPoint.x, -12.5, 12.5);
+        aimPoint.y = THREE.MathUtils.clamp(aimPoint.y, 0.5, 9.6);
+
+        reticleGroup.position.lerp(aimPoint, Math.min(1, dt * 24));
+        reticleOuter.rotation.z += dt * 1.1;
+        reticleMid.rotation.z -= dt * 2.2;
+
+        leftBlaster.root.lookAt(reticleGroup.position);
+        rightBlaster.root.lookAt(reticleGroup.position);
+      }
+
+      updateBlasterDynamics(leftBlaster, dt);
+      updateBlasterDynamics(rightBlaster, dt);
+
+      // 2. Blaster Firing (Desktop & WebXR)
+      const fireDelay = state.rapidTimer > 0 ? 0.088 : 0.17;
+      if (state.mode === 'PLAYING') {
+        if (state.inVR) {
+          if (xrFiring.left && leftBlaster.cooldown <= 0) {
+            fireBlaster(leftBlaster, false);
+            leftBlaster.cooldown = fireDelay;
+          }
+          if (xrFiring.right && rightBlaster.cooldown <= 0) {
+            fireBlaster(rightBlaster, false);
+            rightBlaster.cooldown = fireDelay;
+          }
+        } else if (keys.fire) {
+          const dualBeam = keys.dual || state.dualTimer > 0;
+          if (dualBeam) {
+            if (leftBlaster.cooldown <= 0 && rightBlaster.cooldown <= 0) {
+              fireBlaster(leftBlaster, true);
+              fireBlaster(rightBlaster, true);
+              leftBlaster.cooldown = fireDelay * 1.12;
+              rightBlaster.cooldown = fireDelay * 1.12;
+            }
+          } else {
+            const active = state.fireToggle ? rightBlaster : leftBlaster;
+            if (active.cooldown <= 0) {
+              fireBlaster(active, false);
+              active.cooldown = fireDelay;
+              const other = state.fireToggle ? leftBlaster : rightBlaster;
+              other.cooldown = Math.max(other.cooldown, fireDelay * 0.5);
+              state.fireToggle = !state.fireToggle;
+            }
+          }
+        }
+      }
+
+      // 3. Timers & Active Gameplay
+      if (state.invulnTimer > 0) state.invulnTimer = Math.max(0, state.invulnTimer - dt);
+      if (state.comboTimer > 0) {
+        state.comboTimer -= dt;
+        if (state.comboTimer <= 0) { state.combo = 0; hudDirty = true; }
+      }
+      if (state.rapidTimer > 0) { state.rapidTimer = Math.max(0, state.rapidTimer - dt); hudTimer += dt; }
+      if (state.dualTimer > 0)  { state.dualTimer = Math.max(0, state.dualTimer - dt); hudTimer += dt; }
+
+      if (state.mode === 'PLAYING') {
+        camera.getWorldPosition(playerWorldPos);
+
+        const remaining = aliens.length + galagaFighters.length;
+        if (remaining === 0) {
+          state.mode = 'WAVE_CLEAR';
+          state.waveClearTimer = 2.6;
+          audio.playWaveClear();
+          const bonus = state.wave * 1000;
+          state.score += bonus;
+          hudDirty = true;
+          showAnnouncement(`WAVE ${String(state.wave).padStart(2, '0')} CLEARED!`, `BONUS +${bonus.toLocaleString()}`, 2.4, '#2dff88');
+        } else {
+          // Smooth Continuous Gliding Formation + Accelerating Synth Bass Pulse
+          const aliveFrac = Math.max(0.16, aliens.length / 28);
+          const pulseInterval = Math.max(0.18, (0.62 - state.wave * 0.035) * aliveFrac);
+          state.bassTimer += dt;
+          if (aliens.length > 0 && state.bassTimer >= pulseInterval) {
+            state.bassTimer = 0;
+            audio.playBassPulse();
+          }
+
+          const glideSpeed = (1.55 + state.wave * 0.18) / Math.sqrt(aliveFrac);
+          formationGroup.position.x += state.formationDir * glideSpeed * dt;
+
+          // Check smooth edge bounds & advance closer in Z
+          let hitEdge = false;
+          for (const a of aliens) {
+            const wx = formationGroup.position.x + a.mesh.position.x;
+            if ((state.formationDir > 0 && wx > 8.8) || (state.formationDir < 0 && wx < -8.8)) {
+              hitEdge = true;
+              break;
+            }
+          }
+          if (hitEdge) {
+            state.formationDir *= -1;
+            formationGroup.position.z += 0.85;
+            if (formationGroup.position.z > -4.3) triggerGameOver();
+          }
+
+          // Smooth Ship Hovering, Banking & Wing-Tilt Animations
+          for (const a of aliens) {
+            if (a.flashTimer > 0) {
+              a.flashTimer -= dt;
+              if (a.flashTimer <= 0) a.hullMat.emissive.setHex(a.colorHex);
+            }
+            a.mesh.position.y = a.baseY + Math.sin(elapsed * 2.8 + a.phase) * 0.14;
+            a.mesh.rotation.z = THREE.MathUtils.lerp(a.mesh.rotation.z, -state.formationDir * 0.18 + Math.sin(elapsed * 2.0 + a.phase) * 0.06, dt * 6);
+            a.mesh.rotation.x = Math.sin(elapsed * 2.2 + a.phase) * 0.08;
+
+            if (a.kind === 'dread' && a.accentParts[0]) {
+              a.accentParts[0].rotation.z += dt * 2.4;
+              a.accentParts[0].rotation.y = Math.sin(elapsed * 3.0 + a.phase) * 0.35;
+            } else if (a.kind === 'mantis') {
+              const s = 1 + Math.sin(elapsed * 5.0 + a.phase) * 0.12;
+              a.accentParts.forEach(fin => fin.scale.setScalar(s));
+            }
+          }
+
+          // Smooth Galaga Dive-Bombers
+          state.diveTimer -= dt;
+          if (state.diveTimer <= 0 && galagaFighters.length > 0) {
+            launchGalagaDive();
+            state.diveTimer = Math.max(1.25, 3.0 - state.wave * 0.18);
+          }
+
+          for (const g of galagaFighters) {
+            if (g.flashTimer > 0) {
+              g.flashTimer -= dt;
+              if (g.flashTimer <= 0) g.bodyMat.emissive.setHex(g.colorHex);
+            }
+            if (g.state === 'ESCORT') {
+              g.mesh.position.x = g.home.x + Math.sin(elapsed * 1.7 + g.phase) * 0.9;
+              g.mesh.position.y = g.home.y + Math.cos(elapsed * 2.1 + g.phase) * 0.44;
+              g.mesh.position.z = g.home.z + Math.sin(elapsed * 1.1 + g.phase) * 0.6;
+              g.mesh.lookAt(playerWorldPos);
+              g.mesh.rotation.z += Math.cos(elapsed * 1.7 + g.phase) * 0.2;
+            } else {
+              g.diveT += dt * (0.28 + state.wave * 0.02);
+              if (g.diveT >= 1.0) {
+                g.state = 'ESCORT';
+                g.mesh.position.copy(g.home);
+              } else {
+                const pos = g.diveCurve.getPointAt(g.diveT);
+                const nextPos = g.diveCurve.getPointAt(Math.min(1, g.diveT + 0.02));
+                g.mesh.position.copy(pos);
+                g.mesh.lookAt(nextPos);
+                g.mesh.rotation.z += Math.sin(g.diveT * Math.PI * 3) * 0.65;
+
+                if ((g.shotsFired === 0 && g.diveT > 0.24) || (g.shotsFired === 1 && g.diveT > 0.44)) {
+                  g.shotsFired++;
+                  const aim = playerWorldPos.clone();
+                  aim.x += (Math.random() - 0.5) * 0.7;
+                  aim.y -= 0.14;
+                  spawnEnemyPlasma(pos, aim, 11.5 + state.wave * 0.45);
+                }
+              }
+            }
+          }
+
+          // Formation Plasma Fire
+          state.enemyFireTimer -= dt;
+          if (state.enemyFireTimer <= 0 && aliens.length > 0) {
+            state.enemyFireTimer = Math.max(0.52, 1.4 - state.wave * 0.1);
+            const shooter = aliens[Math.floor(Math.random() * aliens.length)];
+            shooter.mesh.getWorldPosition(tempVec);
+            const aim = playerWorldPos.clone();
+            aim.x += (Math.random() - 0.5) * 2.4;
+            aim.y = 1.0 + Math.random() * 0.72;
+            spawnEnemyPlasma(tempVec, aim, 10.4 + state.wave * 0.45);
+          }
+        }
+
+        // --- Player Laser Bolts ---
+        for (let i = playerBolts.length - 1; i >= 0; i--) {
+          const b = playerBolts[i];
+          b.life -= dt;
+          b.mesh.position.addScaledVector(b.vel, dt);
+          const bp = b.mesh.position;
+          let hit = false;
+
+          // Power-Up Shoot-to-Collect
+          for (let pIdx = powerUps.length - 1; pIdx >= 0; pIdx--) {
+            if (bp.distanceTo(powerUps[pIdx].mesh.position) < 0.78) {
+              applyPowerUp(powerUps[pIdx].def);
+              spawnSparkStreaks(powerUps[pIdx].mesh.position, [0xffffff, powerUps[pIdx].def.color], 22, 8);
+              scene.remove(powerUps[pIdx].mesh);
+              powerUps.splice(pIdx, 1);
+              hit = true;
+              break;
+            }
+          }
+
+          // Hex Barriers
+          if (!hit && bp.z < -2.6 && bp.z > -4.2) {
+            for (const cell of hexCells) {
+              if (!cell.alive) continue;
+              if (bp.distanceTo(cell.worldPos) < HEX_R * 1.15) {
+                damageHexCell(cell, bp);
+                hit = true;
+                break;
+              }
+            }
+          }
+
+          // Alien Swarm
+          if (!hit) {
+            for (let j = aliens.length - 1; j >= 0; j--) {
+              const a = aliens[j];
+              a.mesh.getWorldPosition(tempVec);
+              if (bp.distanceTo(tempVec) < a.radius) {
+                a.hp -= 1;
+                hit = true;
+                if (a.hp <= 0) {
+                  registerKill(tempVec, a.colorHex, a.pts, false);
+                  formationGroup.remove(a.mesh);
+                  a.hullMat.dispose();
+                  aliens.splice(j, 1);
+                } else {
+                  a.flashTimer = 0.12;
+                  a.hullMat.emissive.setHex(0xffffff);
+                  spawnSparkStreaks(bp, [0xffffff, a.colorHex], 12, 7);
+                }
+                break;
+              }
+            }
+          }
+
+          // Galaga Fighters
+          if (!hit) {
+            for (let j = galagaFighters.length - 1; j >= 0; j--) {
+              const g = galagaFighters[j];
+              if (bp.distanceTo(g.mesh.position) < g.radius) {
+                g.hp -= 1;
+                hit = true;
+                if (g.hp <= 0) {
+                  registerKill(g.mesh.position, g.colorHex, g.pts, true);
+                  scene.remove(g.mesh);
+                  g.bodyMat.dispose();
+                  galagaFighters.splice(j, 1);
+                } else {
+                  g.flashTimer = 0.12;
+                  g.bodyMat.emissive.setHex(0xffffff);
+                  spawnSparkStreaks(bp, [0xffffff, 0xffaa33], 14, 8);
+                }
+                break;
+              }
+            }
+          }
+
+          if (hit || b.life <= 0) {
+            scene.remove(b.mesh);
+            playerBolts.splice(i, 1);
+          }
+        }
+
+        // --- Enemy Plasma Orbs ---
+        for (let i = enemyBolts.length - 1; i >= 0; i--) {
+          const eb = enemyBolts[i];
+          eb.life -= dt;
+          eb.mesh.position.addScaledVector(eb.vel, dt);
+          const ep = eb.mesh.position;
+          let remove = false;
+
+          if (ep.z < -2.6 && ep.z > -4.2) {
+            for (const cell of hexCells) {
+              if (!cell.alive) continue;
+              if (ep.distanceTo(cell.worldPos) < HEX_R * 1.45) {
+                damageHexCell(cell, ep);
+                remove = true;
+                break;
+              }
+            }
+          }
+
+          if (!remove && ep.z > -0.6 && ep.z < 0.6) {
+            const dx = ep.x - playerWorldPos.x;
+            const dy = ep.y - (playerWorldPos.y - 0.12);
+            if (dx * dx + dy * dy < 0.42 * 0.42) {
+              damagePlayer();
+              remove = true;
+            }
+          }
+
+          if (remove || eb.life <= 0 || ep.y < 0 || ep.z > 2.5) {
+            scene.remove(eb.mesh);
+            enemyBolts.splice(i, 1);
+          }
+        }
+
+        // --- Drifting Power-Up Orbs ---
+        for (let i = powerUps.length - 1; i >= 0; i--) {
+          const p = powerUps[i];
+          p.mesh.position.z += p.speedZ * dt;
+          p.ring1.rotation.y += dt * 3.2;
+          p.ring2.rotation.x += dt * 3.6;
+          p.mesh.position.y += Math.sin(elapsed * 4 + i) * 0.005;
+
+          if (p.mesh.position.distanceTo(playerWorldPos) < 1.35) {
+            applyPowerUp(p.def);
+            scene.remove(p.mesh);
+            powerUps.splice(i, 1);
+          } else if (p.mesh.position.z > 2.2) {
+            scene.remove(p.mesh);
+            powerUps.splice(i, 1);
+          }
+        }
+      } else if (state.mode === 'WAVE_CLEAR') {
+        state.waveClearTimer -= dt;
+        if (state.waveClearTimer <= 0) spawnWave(state.wave + 1);
+      }
+
+      // 4. Hex Cell Ripple Recovery
+      for (const cell of hexCells) {
+        if (cell.flashTimer > 0) {
+          cell.flashTimer -= dt;
+          cell.rimMat.color.setHex(cell.flashTimer > 0 ? 0xffffff : (cell.hp === 1 ? 0xffe466 : 0x6bffa8));
+        }
+      }
+
+      // 5. Smooth Pooled Explosion VFX Updates
+      if (explosionLightTimer > 0) {
+        explosionLightTimer = Math.max(0, explosionLightTimer - dt);
+        explosionLight.intensity = (explosionLightTimer / 0.28) * 14;
+      }
+
+      for (const s of shardPool) {
+        if (s.life <= 0) continue;
+        s.life -= dt;
+        if (s.life <= 0) { s.mesh.visible = false; continue; }
+        s.vel.multiplyScalar(0.965);
+        s.vel.y -= 2.8 * dt;
+        s.mesh.position.addScaledVector(s.vel, dt);
+        s.mesh.rotation.x += s.rot.x * dt;
+        s.mesh.rotation.y += s.rot.y * dt;
+        s.mesh.rotation.z += s.rot.z * dt;
+        const r = s.life / s.maxLife;
+        s.mesh.scale.setScalar(s.baseScale * Math.min(1, r * 1.4));
+        s.mat.opacity = Math.min(1, r * 1.5);
+      }
+
+      for (const st of streakPool) {
+        if (st.life <= 0) continue;
+        st.life -= dt;
+        if (st.life <= 0) { st.mesh.visible = false; continue; }
+        st.mesh.position.addScaledVector(st.vel, dt);
+        st.vel.multiplyScalar(0.94);
+        st.mesh.lookAt(st.mesh.position.x + st.vel.x, st.mesh.position.y + st.vel.y, st.mesh.position.z + st.vel.z);
+        const r = st.life / st.maxLife;
+        st.mat.opacity = r;
+        st.mesh.scale.set(1, 1, 0.3 + r * 1.15);
+      }
+
+      for (const sw of shockwavePool) {
+        if (sw.life <= 0) continue;
+        sw.life -= dt;
+        if (sw.life <= 0) { sw.group.visible = false; sw.flare.visible = false; continue; }
+        const t = 1 - sw.life / sw.maxLife;
+        sw.group.scale.setScalar(0.32 + t * sw.maxScale);
+        sw.outerMat.opacity = Math.pow(1 - t, 1.25);
+        sw.innerMat.opacity = Math.pow(1 - t, 1.6);
+        const fSz = (sw.maxScale * 0.92) * (1 - t * 0.55);
+        sw.flare.scale.set(fSz, fSz, 1);
+        sw.flareMat.opacity = Math.pow(1 - t, 1.5);
+      }
+
+      // 6. Banner & High-Res HUD Updates
+      if (state.bannerTimer > 0) {
+        state.bannerTimer -= dt;
+        if (state.bannerTimer <= 0) {
+          comboPopupEl.classList.remove('show');
+          vrBanner.mesh.visible = false;
+        }
+      }
+      if (hudDirty || hudTimer >= 0.16) {
+        hudTimer = 0;
+        refreshDiegeticHUD();
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Wait briefly for web fonts to load before initial HUD render, then start loop
+    refreshDiegeticHUD();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => refreshDiegeticHUD());
+    }
+
+    window.onload = () => {
+      renderer.setAnimationLoop(animate);
+    };
+  </script>
+</body>
+</html>
